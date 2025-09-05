@@ -1,0 +1,105 @@
+/* Enhanced styles for Transaction History entities display */
+
+.entities-flow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 6px;
+}
+
+.entity-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  flex: 1;
+  min-width: 0; /* Allow text to shrink */
+}
+
+.entity-logo {
+  font-size: 1.2rem;
+  flex-shrink: 0; /* Don't shrink the logo */
+  min-width: 20px;
+  text-align: center;
+}
+
+.entity-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* Allow text to shrink */
+  flex: 1;
+}
+
+.entity-name {
+  font-weight: 600;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  line-height: 1.2;
+}
+
+.entity-id {
+  color: #666;
+  font-family: monospace;
+  font-size: 0.8rem;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+.flow-arrow {
+  font-size: 1.2rem;
+  color: #667eea;
+  font-weight: bold;
+  flex-shrink: 0; /* Don't shrink the arrow */
+  margin: 0 0.5rem;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* Responsive improvements for entity display */
+@media (max-width: 768px) {
+  .entities-flow {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+    padding: 0.5rem;
+  }
+  
+  .flow-arrow {
+    align-self: center;
+    transform: rotate(90deg);
+    margin: 0.25rem 0;
+  }
+  
+  .entity-info {
+    justify-content: flex-start;
+  }
+  
+  .entity-name {
+    font-size: 0.85rem;
+  }
+  
+  .entity-id {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .entity-name {
+    font-size: 0.8rem;
+  }
+  
+  .entity-logo {
+    font-size: 1rem;
+  }
+  
+  .entities-flow {
+    padding: 0.4rem;
+  }
+}
