@@ -1,5 +1,8 @@
 # Contoso Finance Portal with Verified ID
 
+> **⚠️ WARNING: TESTING PURPOSE ONLY**  
+> This application is a demonstration/proof-of-concept and is **NOT PRODUCTION READY**. It is intended for testing, learning, and evaluation purposes only. Do not use this application with real financial data or in production environments without proper security hardening, testing, and compliance validation.
+
 A demo financial web application for Contoso Corporation that integrates with Microsoft Entra Verified ID to verify CFO identity before processing high-value financial transactions between company entities.
 
 ## Features
@@ -103,14 +106,30 @@ The application integrates with Microsoft Entra Verified ID through:
 
 ## Development Notes
 
-This is a demonstration application. For production use:
+**⚠️ IMPORTANT: This is a demonstration application for testing purposes only.**
 
-- Implement proper database storage
-- Add user authentication and sessions  
-- Enhance error handling and logging
-- Configure proper HTTPS endpoints
-- Set up production-ready Verified ID tenant
-- Implement additional security measures
+**Security Considerations for Production Use:**
+- Implement proper database storage with encryption
+- Add comprehensive user authentication and authorization
+- Set up secure session management
+- Implement input validation and sanitization
+- Add rate limiting and DDoS protection
+- Configure proper HTTPS endpoints with valid certificates
+- Set up production-ready Microsoft Entra Verified ID tenant
+- Implement comprehensive logging and monitoring
+- Add error handling and graceful failure modes
+- Conduct security audits and penetration testing
+- Implement proper backup and disaster recovery
+- Add compliance controls for financial regulations
+
+**Current Limitations:**
+- Uses in-memory storage (data is lost on restart)
+- Minimal error handling
+- No user authentication
+- Uses ngrok for development (not suitable for production)
+- No input validation on financial amounts
+- No audit logging
+- No encryption of sensitive data
 
 ## Testing
 
