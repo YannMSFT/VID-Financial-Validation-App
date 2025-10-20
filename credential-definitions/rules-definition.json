@@ -1,0 +1,39 @@
+{
+  "attestations": {
+    "idTokens": [
+      {
+        "clientId": "YOUR_APP_CLIENT_ID",
+        "configuration": "https://login.microsoftonline.com/YOUR_TENANT_ID/v2.0/.well-known/openid-configuration",
+        "redirectUri": "https://your-app.com/callback",
+        "scope": "openid profile",
+        "mapping": [
+          {
+            "outputClaim": "firstName",
+            "required": true,
+            "inputClaim": "$.given_name",
+            "indexed": false
+          },
+          {
+            "outputClaim": "lastName",
+            "required": true,
+            "inputClaim": "$.family_name",
+            "indexed": false
+          },
+          {
+            "outputClaim": "photo",
+            "required": true,
+            "inputClaim": "$.picture",
+            "indexed": false
+          }
+        ],
+        "required": false
+      }
+    ]
+  },
+  "validityInterval": 2592000,
+  "vc": {
+    "type": [
+      "VerifiedCredentialExpert"
+    ]
+  }
+}

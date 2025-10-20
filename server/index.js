@@ -29,7 +29,9 @@ if (!process.env.BASE_URL || process.env.BASE_URL.includes('localhost')) {
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+// Increase body size limit to handle Verified ID callbacks (credentials can be large)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Store for pending verifications (in production, use a proper database)
 const verificationRequests = new Map();
@@ -168,7 +170,16 @@ app.post('/api/verify', async (req, res) => {
       requestedCredentials: [
         {
           type: process.env.CREDENTIAL_TYPE || 'VerifiedCredentialExpert',
-          acceptedIssuers: [process.env.ISSUER_AUTHORITY || process.env.VERIFIER_AUTHORITY || 'did:web:verifiedid.contoso.com']
+          acceptedIssuers: [process.env.ISSUER_AUTHORITY || process.env.VERIFIER_AUTHORITY || 'did:web:verifiedid.contoso.com'],
+          // Face Check enabled - requires photo claim in credentials
+          configuration: {
+            validation: {
+              faceCheck: {
+                sourcePhotoClaimName: "photo",
+                matchConfidenceThreshold: 70
+              }
+            }
+          }
         }
       ],
       includeReceipt: true
@@ -251,6 +262,17 @@ app.post('/api/verify', async (req, res) => {
       
       const { requestId: vidRequestId, url, expiry, qrCode } = verifiedIdResponse.data;
 
+      // Log diagnostic information
+      console.log('\n========================================');
+      console.log('✅ VERIFIED ID SERVICE RESPONSE');
+      console.log('========================================');
+      console.log('Request ID:', vidRequestId || requestId);
+      console.log('Presentation URL:', url);
+      console.log('QR Code provided by service:', qrCode ? 'YES' : 'NO (generating from URL)');
+      console.log('URL starts with:', url?.substring(0, 50) + '...');
+      console.log('Expiry:', expiry);
+      console.log('========================================\n');
+
       // Update stored request with Verified ID response
       verificationRequests.set(requestId, {
         ...verificationRequests.get(requestId),
@@ -273,6 +295,13 @@ app.post('/api/verify', async (req, res) => {
     } catch (apiError) {
       console.error('Verified ID API call failed:', apiError.response?.status, apiError.response?.statusText);
       console.error('Error details:', JSON.stringify(apiError.response?.data, null, 2));
+      
+      console.log('\n========================================');
+      console.log('⚠️  FALLING BACK TO MOCK MODE');
+      console.log('========================================');
+      console.log('Reason: Entra Verified ID API not accessible');
+      console.log('Error:', apiError.response?.data?.error?.message || apiError.message);
+      console.log('========================================\n');
       
       // Check if it's a callback URL issue
       if (apiError.response?.data?.error?.innererror?.target === 'callback.url') {
@@ -420,6 +449,17 @@ app.post('/api/verification-callback', (req, res) => {
         request.verifiedAt = new Date().toISOString();
         request.lastActivity = new Date().toISOString();
         
+        // Extract Face Check results from receipt if available
+        if (receipt) {
+          if (receipt.faceCheck) {
+            request.faceCheck = {
+              matchConfidenceScore: receipt.faceCheck.matchConfidenceScore,
+              sourcePhotoQuality: receipt.faceCheck.sourcePhotoQuality
+            };
+            console.log(`Face Check results for request ${state}:`, request.faceCheck);
+          }
+        }
+        
         // Extract verified claims from Microsoft Entra Verified ID response
         if (verifiedCredentialsData && verifiedCredentialsData.length > 0) {
           const credential = verifiedCredentialsData[0];
@@ -448,6 +488,30 @@ app.post('/api/verification-callback', (req, res) => {
         request.status = 'failed';
         request.error = error || req.body.error || 'Presentation failed';
         request.lastActivity = new Date().toISOString();
+        
+        console.log('Full error object:', JSON.stringify(req.body, null, 2));
+        
+        // Extract Face Check results even on failure
+        if (receipt && receipt.faceCheck) {
+          request.faceCheck = {
+            matchConfidenceScore: receipt.faceCheck.matchConfidenceScore,
+            sourcePhotoQuality: receipt.faceCheck.sourcePhotoQuality
+          };
+          console.log(`Face Check results (failed) for request ${state}:`, request.faceCheck);
+        }
+        
+        // Try to extract Face Check score from error message if not in receipt
+        if (!request.faceCheck && request.error) {
+          const errorStr = typeof request.error === 'string' ? request.error : JSON.stringify(request.error);
+          const scoreMatch = errorStr.match(/confidence\s+score[:\s]+(\d+)/i) || errorStr.match(/score[:\s]+(\d+)/i);
+          if (scoreMatch) {
+            request.faceCheck = {
+              matchConfidenceScore: parseInt(scoreMatch[1])
+            };
+            console.log(`Face Check score extracted from error message:`, request.faceCheck);
+          }
+        }
+        
         console.error(`Presentation failed for request: ${state}`, request.error);
         break;
         
@@ -460,18 +524,13 @@ app.post('/api/verification-callback', (req, res) => {
     // Update the stored request
     verificationRequests.set(state, request);
     
-    // Return success response to Verified ID service
-    res.status(200).json({ 
-      status: 'received',
-      requestId: state 
-    });
+    // Return minimal success response to Verified ID service (to avoid 413 error)
+    res.status(200).send();
     
   } catch (error) {
     console.error('Callback processing error:', error);
-    res.status(500).json({ 
-      error: 'Error processing verification callback',
-      details: error.message 
-    });
+    // Return minimal error response (no JSON body to avoid 413)
+    res.status(500).send();
   }
 });
 
@@ -523,7 +582,9 @@ app.get('/api/verification-status/:requestId', async (req, res) => {
       timestamp: request.timestamp,
       expiresAt: request.expiresAt,
       isLocalMode: request.isLocalMode,
-      transactionDetails: request.transactionDetails
+      transactionDetails: request.transactionDetails,
+      faceCheck: request.faceCheck,
+      error: request.error
     });
     
   } catch (error) {
@@ -589,7 +650,7 @@ app.post('/api/simulate-verification/:requestId', (req, res) => {
 // Submit transaction (requires verification for high amounts)
 app.post('/api/transactions', (req, res) => {
   try {
-    const { fromEntity, toEntity, amount, description, category, verificationId, verifiedClaims } = req.body;
+    const { fromEntity, toEntity, amount, description, category, verificationId, verifiedClaims, faceCheck } = req.body;
     
     console.log('📋 TRANSACTION REQUEST RECEIVED:');
     console.log('  Amount:', amount);
@@ -597,8 +658,10 @@ app.post('/api/transactions', (req, res) => {
     console.log('  To:', toEntity);
     console.log('  VerificationId:', verificationId);
     console.log('  VerifiedClaims:', verifiedClaims);
+    console.log('  FaceCheck:', faceCheck);
     
     let validatorInfo = null;
+    let faceCheckInfo = null;
     
     // Check if verification was completed for high-value transactions
     if (amount > 50000) {
@@ -629,6 +692,16 @@ app.post('/api/transactions', (req, res) => {
         };
         console.log('👤 Validator info extracted:', validatorInfo);
       }
+      
+      // Extract Face Check info if available
+      const faceCheckData = verification?.faceCheck || faceCheck;
+      if (faceCheckData && faceCheckData.matchConfidenceScore !== undefined) {
+        faceCheckInfo = {
+          matchConfidenceScore: faceCheckData.matchConfidenceScore,
+          sourcePhotoQuality: faceCheckData.sourcePhotoQuality
+        };
+        console.log('📸 Face Check info extracted:', faceCheckInfo);
+      }
     }
 
     // Find entity details from the entities database
@@ -651,7 +724,8 @@ app.post('/api/transactions', (req, res) => {
       timestamp: new Date().toISOString(),
       verificationId,
       approver: validatorInfo ? validatorInfo.fullName : (verificationId ? 'Contoso CFO Team' : 'System Auto-Approved'),
-      validator: validatorInfo // Store full validator info for detailed display
+      validator: validatorInfo, // Store full validator info for detailed display
+      faceCheck: faceCheckInfo // Store Face Check results if available
     };
     
     completedTransactions.push(transaction);

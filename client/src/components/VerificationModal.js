@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { QrCode, Smartphone, CheckCircle, XCircle, Clock } from 'lucide-react';
 
 const VerificationModal = ({ verificationData, onComplete, onCancel, verificationStatus, onSimulate }) => {
@@ -15,6 +14,34 @@ const VerificationModal = ({ verificationData, onComplete, onCancel, verificatio
       setStatus('pending');
     }
   }, [verificationStatus]);
+
+  // Extract Face Check score from status message if present
+  const extractFaceCheckScore = () => {
+    // Try multiple patterns to find the score
+    const patterns = [
+      /Face Check Score:\s*(\d+)%/i,
+      /📸.*?(\d+)%/,
+      /confidence\s+score[:\s]+(\d+)/i,
+      /score[:\s]+(\d+)/i
+    ];
+    
+    for (const pattern of patterns) {
+      const match = verificationStatus.match(pattern);
+      if (match) {
+        return parseInt(match[1]);
+      }
+    }
+    return null;
+  };
+
+  // Get display message without Face Check score section
+  const getDisplayMessage = () => {
+    return verificationStatus
+      .replace(/\n\n📸 Face Check Score:.*?\n\(Required:.*?\)/s, '')
+      .replace(/\s*\|\s*Face Check Score: \d+%/, '');
+  };
+
+  const faceCheckScore = extractFaceCheckScore();
 
   const getStatusIcon = () => {
     switch (status) {
@@ -78,18 +105,26 @@ const VerificationModal = ({ verificationData, onComplete, onCancel, verificatio
 
           <div className="status-section">
             {getStatusIcon()}
-            <p className="status-message">{verificationStatus || 'Initializing verification...'}</p>
+            <p className="status-message">{getDisplayMessage() || 'Initializing verification...'}</p>
+            
+            {status === 'failed' && faceCheckScore !== null && (
+              <div className="face-check-score">
+                <p className="score-label">📸 Face Check Match Score</p>
+                <p className="score-value">{faceCheckScore}%</p>
+                <p className="score-threshold">Required: 70% or higher</p>
+              </div>
+            )}
           </div>
         </div>
 
         <div className="verification-actions">
           {status === 'failed' && (
-            <button onClick={onCancel} className="btn-retry">
-              Try Again
+            <button onClick={onCancel} className="btn-cancel">
+              🔄 Try Again
             </button>
           )}
           <button onClick={onCancel} className="btn-cancel">
-            Cancel Transaction
+            ❌ Cancel Transaction
           </button>
         </div>
       </div>

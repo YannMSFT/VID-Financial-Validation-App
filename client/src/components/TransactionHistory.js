@@ -152,6 +152,13 @@ const TransactionHistory = ({ transactions }) => {
                       <span className="verified-badge">🔐 Identity Verified</span>
                     </div>
                   )}
+                  {transaction.faceCheck && transaction.faceCheck.matchConfidenceScore !== undefined && (
+                    <div className="meta-row">
+                      <span className="face-check-badge">
+                        📸 Face Check: {transaction.faceCheck.matchConfidenceScore}%
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

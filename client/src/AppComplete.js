@@ -107,9 +107,12 @@ function App() {
     const interval = setInterval(async () => {
       try {
         const response = await axios.get(`/api/verification-status/${requestId}`);
-        const { status, verifiedClaims, isLocalMode } = response.data;
+        const { status, verifiedClaims, isLocalMode, faceCheck, error } = response.data;
         
         console.log('Polling status:', status);
+        if (faceCheck) {
+          console.log('Face Check data:', faceCheck);
+        }
         
         // Update status message for user
         switch (status) {
@@ -155,8 +158,8 @@ function App() {
               // Close verification modal first
               setShowVerification(false);
               
-              // Process the transaction with verifiedClaims
-              processTransaction(transactionCopy, requestId, verifiedClaims);
+              // Process the transaction with verifiedClaims and faceCheck data
+              processTransaction(transactionCopy, requestId, verifiedClaims, faceCheck);
             } else {
               console.log('❌ NO PENDING TRANSACTION TO PROCESS');
               console.log('❌ Current state - pendingTransaction:', pendingTransaction);
@@ -166,7 +169,61 @@ function App() {
             break;
           case 'failed':
           case 'expired':
-            setVerificationStatus('❌ Verification failed or expired');
+            console.log('===== Verification failed - DETAILED debugging =====');
+            console.log('faceCheck object:', JSON.stringify(faceCheck, null, 2));
+            console.log('error type:', typeof error);
+            console.log('error value:', error);
+            console.log('error stringified:', JSON.stringify(error, null, 2));
+            console.log('Full response.data:', JSON.stringify(response.data, null, 2));
+            
+            // Build a user-friendly error message
+            let failureMessage = '❌ Verification Failed';
+            
+            // Try to extract Face Check score from multiple sources
+            let scoreFromError = null;
+            if (error) {
+              const errorMsg = typeof error === 'string' ? error : (error.message || JSON.stringify(error));
+              console.log('Error message for parsing:', errorMsg);
+              console.log('Error message length:', errorMsg.length);
+              
+              // Look for patterns like "confidence score 65" or "score: 65" or just numbers after "score"
+              const patterns = [
+                /confidence\s+score[:\s]+(\d+)/i,
+                /score[:\s]+(\d+)/i,
+                /match.*?(\d+)%/i,
+                /(\d+)%.*?confidence/i,
+                /threshold.*?(\d+)/i,
+                /(\d+)\s*%/,  // Any number followed by %
+                /score\s*[=:]\s*(\d+)/i
+              ];
+              
+              for (let i = 0; i < patterns.length; i++) {
+                const pattern = patterns[i];
+                const match = errorMsg.match(pattern);
+                console.log(`Pattern ${i} (${pattern}): ${match ? 'MATCHED - ' + match[1] : 'no match'}`);
+                if (match) {
+                  scoreFromError = parseInt(match[1]);
+                  console.log(`✓ Found score ${scoreFromError} using pattern ${i}: ${pattern}`);
+                  break;
+                }
+              }
+            }
+            
+            // Add Face Check score if available (from object or extracted from error)
+            const displayScore = faceCheck?.matchConfidenceScore ?? scoreFromError;
+            console.log('Final display score:', displayScore);
+            console.log('=============================================');
+            
+            if (displayScore !== null && displayScore !== undefined) {
+              failureMessage += `\n\n📸 Face Check Score: ${displayScore}%\n(Required: 70% or higher)`;
+            }
+            
+            // Add generic user-friendly error message
+            if (error) {
+              failureMessage += `\n\nDetails: Verification did not pass`;
+            }
+            
+            setVerificationStatus(failureMessage);
             clearInterval(interval);
             setPollingInterval(null);
             break;
@@ -209,17 +266,19 @@ function App() {
     }
   };
 
-  const processTransaction = async (transactionData, verificationId = null, verifiedClaims = null) => {
+  const processTransaction = async (transactionData, verificationId = null, verifiedClaims = null, faceCheck = null) => {
     console.log('🚀 PROCESS TRANSACTION CALLED');
     console.log('Transaction data:', transactionData);
     console.log('Verification ID:', verificationId);
     console.log('Verified claims:', verifiedClaims);
+    console.log('Face Check data:', faceCheck);
     
     try {
       const response = await axios.post('/api/transactions', {
         ...transactionData,
         verificationId,
-        verifiedClaims
+        verifiedClaims,
+        faceCheck
       });
       
       console.log('✅ SERVER RESPONSE:', response.data);
@@ -249,6 +308,11 @@ function App() {
       if (verifiedClaims && (verifiedClaims.firstName || verifiedClaims.lastName)) {
         const validatorName = `${verifiedClaims.firstName || ''} ${verifiedClaims.lastName || ''}`.trim();
         transactionSummary.push('', `✅ Approved by: ${validatorName}`);
+        
+        // Add Face Check score if available
+        if (faceCheck && faceCheck.matchConfidenceScore !== undefined) {
+          transactionSummary.push(`📸 Face Check Score: ${faceCheck.matchConfidenceScore}%`);
+        }
       }
       
       const summaryText = transactionSummary.join('\n');

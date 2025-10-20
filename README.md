@@ -10,6 +10,7 @@ A demo financial web application for Contoso Corporation that integrates with Mi
 - **Entity Management Dashboard**: View all Contoso company entities and their budget status
 - **Financial Transaction Processing**: Secure transactions between Contoso departments and subsidiaries
 - **CFO Approval Workflow**: Automatic CFO verification for transactions over $50,000
+- **Face Check Biometric Verification**: Real-time facial recognition to verify credential holder identity
 - **QR Code Integration**: Easy verification via Microsoft Authenticator mobile app
 - **Transaction History**: Complete audit trail of all financial transactions
 - **Budget Monitoring**: Real-time budget tracking across all Contoso entities
@@ -94,8 +95,20 @@ The application integrates with Microsoft Entra Verified ID through:
 
 1. **Verification Request**: Creates a presentation request with QR code
 2. **Mobile Flow**: Users scan QR code with Microsoft Authenticator
-3. **Credential Verification**: Backend validates the presented credential
-4. **Order Authorization**: Successful verification authorizes the transaction
+3. **Face Check Biometric**: User takes a selfie that's compared against the credential photo
+4. **Credential Verification**: Backend validates the presented credential and face match
+5. **Order Authorization**: Successful verification authorizes the transaction
+
+### Face Check Implementation
+
+This application requires **Face Check** during credential verification for enhanced security:
+
+- **Biometric Verification**: Users must take a selfie that matches their credential photo
+- **Match Confidence**: 70% threshold (configurable) for face matching
+- **Photo Requirement**: Credentials must include a `photo` claim with base64-encoded image
+- **Privacy**: Face images are processed but not stored by Microsoft
+
+📄 See [FACE_CHECK_IMPLEMENTATION.md](./FACE_CHECK_IMPLEMENTATION.md) for detailed implementation guide
 
 ## Security Features
 

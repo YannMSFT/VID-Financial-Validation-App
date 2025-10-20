@@ -1,0 +1,35 @@
+{
+  "locale": "en-US",
+  "card": {
+    "title": "Verified Credential Expert",
+    "issuedBy": "Contoso Corporation",
+    "backgroundColor": "#000000",
+    "textColor": "#ffffff",
+    "logo": {
+      "uri": "https://didcustomerplayground.blob.core.windows.net/public/VerifiedCredentialExpert_icon.png",
+      "description": "Verified Credential Expert Logo"
+    },
+    "description": "Use this credential to prove you are a Verified Credential Expert and CFO at Contoso Corporation"
+  },
+  "consent": {
+    "title": "Do you want to get your Verified Credential Expert card?",
+    "instructions": "Please log in with your account to get your card."
+  },
+  "claims": [
+    {
+      "claim": "vc.credentialSubject.firstName",
+      "label": "First Name",
+      "type": "String"
+    },
+    {
+      "claim": "vc.credentialSubject.lastName",
+      "label": "Last Name",
+      "type": "String"
+    },
+    {
+      "claim": "vc.credentialSubject.photo",
+      "label": "Photo",
+      "type": "String"
+    }
+  ]
+}
