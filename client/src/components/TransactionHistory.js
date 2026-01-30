@@ -1,5 +1,6 @@
 import React from 'react';
 import { CheckCircle, AlertCircle } from 'lucide-react';
+import { getCompanyLogo } from './CompanyLogos';
 
 const TransactionHistory = ({ transactions }) => {
   const formatDateTime = (timestamp) => {
@@ -14,23 +15,6 @@ const TransactionHistory = ({ transactions }) => {
 
   const formatCurrency = (amount) => {
     return `$${amount.toLocaleString()}`;
-  };
-
-  // Get emoji/logo for each entity
-  const getEntityLogo = (entityId) => {
-    const logos = {
-      'CONTOSO-HQ': '🏢',
-      'CONTOSO-SALES': '💰',
-      'CONTOSO-ENG': '⚙️',
-      'CONTOSO-MKT': '📣',
-      'CONTOSO-EU': '🇪🇺',
-      'CONTOSO-FINANCE': '🏦',
-      'CONTOSO-IT': '💻',
-      'CONTOSO-HR': '👥',
-      'FABRIKAM-US': '🇺🇸',
-      'WOODGROVE-BANK': '🏛️'
-    };
-    return logos[entityId] || '🏢';
   };
 
   const getCategoryIcon = (category) => {
@@ -115,7 +99,7 @@ const TransactionHistory = ({ transactions }) => {
               <div className="transaction-details">
                 <div className="entities-flow">
                   <div className="entity-info">
-                    <div className="entity-logo">{getEntityLogo(transaction.fromEntity.id)}</div>
+                    <div className="entity-logo-small">{getCompanyLogo(transaction.fromEntity.id)}</div>
                     <div className="entity-text">
                       <span className="entity-name" title={transaction.fromEntity.name}>
                         {transaction.fromEntity.name}
@@ -125,7 +109,7 @@ const TransactionHistory = ({ transactions }) => {
                   </div>
                   <div className="flow-arrow">→</div>
                   <div className="entity-info">
-                    <div className="entity-logo">{getEntityLogo(transaction.toEntity.id)}</div>
+                    <div className="entity-logo-small">{getCompanyLogo(transaction.toEntity.id)}</div>
                     <div className="entity-text">
                       <span className="entity-name" title={transaction.toEntity.name}>
                         {transaction.toEntity.name}

@@ -1,27 +1,9 @@
 import React from 'react';
+import { getCompanyLogo } from './CompanyLogos';
 
 const EntityList = ({ entities }) => {
   const formatCurrency = (amount) => `$${amount.toLocaleString()}`;
   const calculateBudgetUsage = (used, total) => ((used / total) * 100).toFixed(1);
-
-  const getEntityIcon = (type) => {
-    switch (type) {
-      case 'Corporate':
-        return '🏢';
-      case 'Sales':
-        return '💰';
-      case 'Engineering':
-        return '⚙️';
-      case 'Marketing':
-        return '📣';
-      case 'Subsidiary':
-        return '🌐';
-      case 'Finance':
-        return '🏦';
-      default:
-        return '🏛️';
-    }
-  };
 
   const getBudgetStatus = (usedPercent) => {
     if (usedPercent >= 80) return 'high';
@@ -48,8 +30,8 @@ const EntityList = ({ entities }) => {
             >
               <div className="entity-header">
                 <div className="entity-info">
-                  <div className="entity-icon">
-                    {getEntityIcon(entity.type)}
+                  <div className="entity-logo-wrapper">
+                    {getCompanyLogo(entity.id)}
                   </div>
                   <div>
                     <h3>{entity.name}</h3>

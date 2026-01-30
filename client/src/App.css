@@ -368,6 +368,38 @@ body {
   line-height: 1.3;
 }
 
+/* Company Logo Styles */
+.entity-logo-wrapper {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.entity-logo-wrapper .company-logo {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.entity-logo-small {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.entity-logo-small .company-logo {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-sm);
+}
+
+.entity-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
 .entity-id {
   color: var(--slate-500);
   font-size: 0.75rem;
@@ -837,6 +869,18 @@ body {
   font-size: 1.125rem;
   flex-shrink: 0;
   line-height: 1;
+}
+
+.entity-logo-small {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.entity-logo-small .company-logo {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
 }
 
 .entity-text {
