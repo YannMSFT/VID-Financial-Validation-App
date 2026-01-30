@@ -144,6 +144,20 @@ body {
   gap: 1rem;
 }
 
+.header-logo {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.header-logo .company-logo {
+  width: 100%;
+  height: 100%;
+}
+
 .logo-icon {
   font-size: 2.25rem;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
@@ -195,8 +209,8 @@ body {
    ============================================ */
 
 .main-content {
-  display: grid;
-  grid-template-columns: 1fr 420px;
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
   padding: 1.5rem 2rem 2rem;
   max-width: 1600px;
@@ -205,14 +219,53 @@ body {
   flex: 1;
 }
 
-.finance-section {
+.transactions-row {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+.new-transaction-section {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--slate-200);
+}
+
+.new-transaction-section .section-header {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
+}
+
+.new-transaction-section .section-header h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--slate-800);
+  margin: 0;
+}
+
+.entities-section {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--slate-200);
+}
+
+.entities-section .section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--slate-800);
+  margin: 0 0 1rem 0;
 }
 
 .transactions-section {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ============================================
@@ -373,25 +426,34 @@ body {
   width: 48px;
   height: 48px;
   flex-shrink: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .entity-logo-wrapper .company-logo {
   width: 100%;
   height: 100%;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  object-fit: contain;
 }
 
 .entity-logo-small {
   width: 28px;
   height: 28px;
   flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .entity-logo-small .company-logo {
   width: 100%;
   height: 100%;
-  border-radius: var(--radius-sm);
+  object-fit: contain;
 }
 
 .entity-icon {
@@ -736,39 +798,35 @@ body {
 .transaction-history {
   background: white;
   border-radius: var(--radius-xl);
-  padding: 1.5rem;
+  padding: 1.25rem;
   box-shadow: var(--shadow-md);
   border: 1px solid var(--slate-200);
-  height: fit-content;
-  max-height: calc(100vh - 200px);
+  max-height: 300px;
   overflow-y: auto;
+  flex: 1;
 }
 
 .transaction-history h2 {
-  font-size: 1.125rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: var(--slate-800);
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.75rem;
+  margin: 0;
   display: flex;
   align-items: center;
-  gap: 0.625rem;
-  position: sticky;
-  top: -1.5rem;
-  background: white;
-  padding: 0.5rem 0;
-  margin-top: -0.5rem;
-  z-index: 1;
+  gap: 0.5rem;
 }
 
 .empty-transactions {
   text-align: center;
-  padding: 3rem 1.5rem;
+  padding: 1rem;
   color: var(--slate-400);
 }
 
 .empty-transactions p {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 500;
+  margin: 0;
 }
 
 .transactions-list {
@@ -988,23 +1046,96 @@ body {
 .verification-modal {
   background: white;
   border-radius: var(--radius-2xl);
-  padding: 2rem;
+  padding: 1.5rem;
   width: 100%;
-  max-width: 650px;
+  max-width: 750px;
   box-shadow: var(--shadow-2xl);
   animation: slideUp 0.3s ease;
 }
 
 .verification-modal h3 {
   text-align: center;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--slate-800);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.625rem;
+  gap: 0.5rem;
+}
+
+/* Approval Reason Banner */
+.approval-reason-banner {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 1px solid #f59e0b;
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.approval-reason-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #92400e;
+  font-weight: 700;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.approval-reason-header svg {
+  color: #d97706;
+  width: 16px;
+  height: 16px;
+}
+
+.approval-reason-details {
+  color: #78350f;
+}
+
+.approval-amount {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.4rem;
+}
+
+.approval-amount .amount-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #b45309;
+}
+
+.approval-amount svg {
+  color: #b45309;
+  width: 16px;
+  height: 16px;
+}
+
+.approval-explanation {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin: 0 0 0.5rem 0;
+  color: #92400e;
+}
+
+.transaction-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.7rem;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius-sm);
+}
+
+.transaction-summary span {
+  color: #78350f;
+}
+
+.transaction-summary strong {
+  color: #92400e;
 }
 
 .local-mode-banner {
@@ -1024,8 +1155,8 @@ body {
 .verification-content {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  margin-bottom: 1.5rem;
+  gap: 1.25rem;
+  margin-bottom: 1rem;
 }
 
 .qr-section {
@@ -1036,15 +1167,15 @@ body {
 
 .qr-code-container {
   background: white;
-  padding: 1rem;
-  border-radius: var(--radius-lg);
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   border: 1px solid var(--slate-200);
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.75rem;
 }
 
 .qr-code {
-  max-width: 180px;
+  max-width: 140px;
   height: auto;
   display: block;
 }
@@ -1052,25 +1183,41 @@ body {
 .instructions {
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
+  gap: 0.4rem;
   width: 100%;
 }
 
 .instruction-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
+  gap: 0.5rem;
+  padding: 0.5rem;
   background: var(--slate-50);
-  border-radius: var(--radius-md);
-  font-size: 0.85rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
   color: var(--slate-700);
   font-weight: 500;
+}
+
+.instruction-item .step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+  color: white;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
 .instruction-item svg {
   color: var(--primary-500);
   flex-shrink: 0;
+  width: 16px;
+  height: 16px;
 }
 
 .local-testing {
@@ -1129,13 +1276,13 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   text-align: center;
-  padding: 1rem;
+  padding: 0.5rem;
 }
 
 .status-icon {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .status-icon.success { color: var(--accent-500); }
@@ -1156,6 +1303,23 @@ body {
   white-space: pre-line;
   line-height: 1.6;
   font-weight: 500;
+}
+
+.status-message.detailed-report {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.7rem;
+  background: linear-gradient(145deg, #fef2f2, #fff5f5);
+  border: 1px solid var(--error-300);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  text-align: left;
+  max-width: 100%;
+  margin: 0;
+  line-height: 1.35;
+  color: var(--slate-800);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  box-shadow: inset 0 2px 8px rgba(239, 68, 68, 0.08);
 }
 
 /* Face Check Score */
@@ -1411,13 +1575,13 @@ body {
    ============================================ */
 
 @media (max-width: 1200px) {
-  .main-content {
-    grid-template-columns: 1fr 380px;
+  .transactions-row {
+    grid-template-columns: 240px 1fr;
   }
 }
 
 @media (max-width: 1024px) {
-  .main-content {
+  .transactions-row {
     grid-template-columns: 1fr;
     gap: 1.25rem;
   }

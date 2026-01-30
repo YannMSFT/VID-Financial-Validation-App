@@ -3,6 +3,7 @@ const cors = require('cors');
 const axios = require('axios');
 const QRCode = require('qrcode');
 const { v4: uuidv4 } = require('uuid');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -115,14 +116,6 @@ const companyEntities = [
     type: 'Marketing',
     budget: 1500000,
     usedBudget: 890000,
-    status: 'active'
-  },
-  { 
-    id: 'CONTOSO-EU', 
-    name: 'Contoso European Subsidiary', 
-    type: 'Subsidiary',
-    budget: 3200000,
-    usedBudget: 1650000,
     status: 'active'
   },
   { 
@@ -750,6 +743,17 @@ app.get('/api/transactions', (req, res) => {
   res.json(completedTransactions);
 });
 
+// Serve static files from React build in production
+if (process.env.NODE_ENV === 'production') {
+  // Serve static files from the React app build directory
+  app.use(express.static(path.join(__dirname, '../client/build')));
+
+  // Handle React routing, return all requests to React app
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+  });
+}
+
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT} - Fresh start with new ngrok URL!`);
+  console.log(`🚀 Server running on port ${PORT}${process.env.NODE_ENV === 'production' ? ' (Production mode)' : ''}`);
 });

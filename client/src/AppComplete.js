@@ -4,6 +4,7 @@ import EntityList from './components/EntityList';
 import TransactionForm from './components/TransactionForm';
 import VerificationModal from './components/VerificationModal';
 import TransactionHistory from './components/TransactionHistory';
+import { getCompanyLogo } from './components/CompanyLogos';
 import './App.css';
 
 function App() {
@@ -176,52 +177,109 @@ function App() {
             console.log('error stringified:', JSON.stringify(error, null, 2));
             console.log('Full response.data:', JSON.stringify(response.data, null, 2));
             
-            // Build a user-friendly error message
-            let failureMessage = '❌ Verification Failed';
+            // Get transaction details for context
+            const txDetails = response.data.transactionDetails || pendingTransaction;
+            const fromEntityName = entities.find(e => e.id === txDetails?.fromEntity)?.name || txDetails?.fromEntity || 'Unknown';
+            const toEntityName = entities.find(e => e.id === txDetails?.toEntity)?.name || txDetails?.toEntity || 'Unknown';
+            const txAmount = txDetails?.amount ? `$${txDetails.amount.toLocaleString()}` : 'Unknown amount';
+            
+            // Build a comprehensive failure report
+            let failureMessage = '❌ CFO Approval Verification Failed\n';
+            failureMessage += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
+            
+            // Transaction Context Section
+            failureMessage += '📋 TRANSACTION DETAILS\n';
+            failureMessage += `   • From: ${fromEntityName}\n`;
+            failureMessage += `   • To: ${toEntityName}\n`;
+            failureMessage += `   • Amount: ${txAmount}\n`;
+            if (txDetails?.description) {
+              failureMessage += `   • Description: ${txDetails.description}\n`;
+            }
+            if (txDetails?.category) {
+              failureMessage += `   • Category: ${txDetails.category}\n`;
+            }
+            failureMessage += '\n';
             
             // Try to extract Face Check score from multiple sources
             let scoreFromError = null;
             if (error) {
               const errorMsg = typeof error === 'string' ? error : (error.message || JSON.stringify(error));
               console.log('Error message for parsing:', errorMsg);
-              console.log('Error message length:', errorMsg.length);
               
-              // Look for patterns like "confidence score 65" or "score: 65" or just numbers after "score"
               const patterns = [
                 /confidence\s+score[:\s]+(\d+)/i,
                 /score[:\s]+(\d+)/i,
                 /match.*?(\d+)%/i,
                 /(\d+)%.*?confidence/i,
                 /threshold.*?(\d+)/i,
-                /(\d+)\s*%/,  // Any number followed by %
+                /(\d+)\s*%/,
                 /score\s*[=:]\s*(\d+)/i
               ];
               
               for (let i = 0; i < patterns.length; i++) {
                 const pattern = patterns[i];
                 const match = errorMsg.match(pattern);
-                console.log(`Pattern ${i} (${pattern}): ${match ? 'MATCHED - ' + match[1] : 'no match'}`);
                 if (match) {
                   scoreFromError = parseInt(match[1]);
-                  console.log(`✓ Found score ${scoreFromError} using pattern ${i}: ${pattern}`);
                   break;
                 }
               }
             }
             
-            // Add Face Check score if available (from object or extracted from error)
+            // Get the display score
             const displayScore = faceCheck?.matchConfidenceScore ?? scoreFromError;
-            console.log('Final display score:', displayScore);
-            console.log('=============================================');
+            const requiredScore = 70;
             
+            // Face Check Results Section
+            failureMessage += '📸 FACE CHECK RESULTS\n';
             if (displayScore !== null && displayScore !== undefined) {
-              failureMessage += `\n\n📸 Face Check Score: ${displayScore}%\n(Required: 70% or higher)`;
+              const scoreDiff = requiredScore - displayScore;
+              const scoreBar = displayScore >= requiredScore ? '✅' : '❌';
+              failureMessage += `   ${scoreBar} Confidence Score: ${displayScore}%\n`;
+              failureMessage += `   • Required Threshold: ${requiredScore}%\n`;
+              if (displayScore < requiredScore) {
+                failureMessage += `   • Shortfall: ${scoreDiff}% below threshold\n`;
+              }
+              if (faceCheck?.sourcePhotoQuality) {
+                failureMessage += `   • Photo Quality: ${faceCheck.sourcePhotoQuality}\n`;
+              }
+            } else {
+              failureMessage += '   • Face verification was not completed\n';
             }
+            failureMessage += '\n';
             
-            // Add generic user-friendly error message
-            if (error) {
-              failureMessage += `\n\nDetails: Verification did not pass`;
+            // Failure Reason Section
+            failureMessage += '🔍 FAILURE REASON\n';
+            if (status === 'expired') {
+              failureMessage += '   The verification request has expired.\n';
+              failureMessage += '   • Verification requests are valid for 10 minutes\n';
+              failureMessage += '   • The QR code was not scanned in time\n';
+            } else if (displayScore !== null && displayScore < requiredScore) {
+              failureMessage += '   Face verification did not meet the confidence threshold.\n';
+              failureMessage += '   \n';
+              failureMessage += '   Possible causes:\n';
+              failureMessage += '   • The person presenting the credential may not match\n';
+              failureMessage += '     the photo on the Verified ID\n';
+              failureMessage += '   • Poor lighting conditions during face capture\n';
+              failureMessage += '   • Camera angle or distance was not optimal\n';
+              failureMessage += '   • Glasses, masks, or other obstructions\n';
+            } else if (error) {
+              const errorStr = typeof error === 'string' ? error : (error.message || error.code || 'Unknown error');
+              failureMessage += `   ${errorStr}\n`;
+            } else {
+              failureMessage += '   The verification process could not be completed.\n';
             }
+            failureMessage += '\n';
+            
+            // Next Steps Section
+            failureMessage += '📌 RECOMMENDED ACTIONS\n';
+            failureMessage += '   1. Ensure proper lighting and camera positioning\n';
+            failureMessage += '   2. Remove glasses or face coverings if possible\n';
+            failureMessage += '   3. Verify the correct CFO credential is being used\n';
+            failureMessage += '   4. Try the verification process again\n';
+            failureMessage += '   5. Contact IT support if the issue persists\n';
+            
+            console.log('=============================================');
             
             setVerificationStatus(failureMessage);
             clearInterval(interval);
@@ -355,7 +413,7 @@ function App() {
       <header className="app-header">
         <div className="header-content">
           <div className="header-left">
-            <span className="logo-icon">🏢</span>
+            <div className="header-logo">{getCompanyLogo('CONTOSO-HQ')}</div>
             <div className="header-text">
               <h1>Contoso Finance Portal</h1>
               <p>Internal financial transaction management system</p>
@@ -369,61 +427,69 @@ function App() {
       </header>
 
       <main className="main-content">
-        <div className="finance-section">
-          <div className="action-bar">
-            <button 
-              className="btn-primary" 
-              onClick={handleNewTransaction}
-            >
-              + New Transaction
-            </button>
+        <div className="transactions-row">
+          <div className="new-transaction-section">
+            <div className="section-header">
+              <h2>New Transaction</h2>
+              <button 
+                className="btn-primary" 
+                onClick={handleNewTransaction}
+              >
+                + Create
+              </button>
+            </div>
           </div>
           
-          <EntityList entities={entities} />
-          
-          {showTransactionForm && !successMessage && (
-            <TransactionForm
-              entities={entities}
-              onSubmit={handleTransactionSubmit}
-              onCancel={() => setShowTransactionForm(false)}
-            />
-          )}
-          
-          {successMessage && (
-            <div className="transaction-success">
-              <div className="success-content">
-                <div className="success-icon">✅</div>
-                <h3>Transaction Status</h3>
-                <div className="transaction-details">
-                  {successMessage.split('\n').map((line, index) => (
-                    <div key={index} className="detail-line">
-                      {line.trim() && <span>{line.trim()}</span>}
-                    </div>
-                  ))}
-                </div>
-                <button 
-                  className="btn-close-success" 
-                  onClick={() => {
-                    console.log('🔄 Closing success message');
-                    setSuccessMessage('');
-                    setShowTransactionForm(false);
-                  }}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          )}
+          <div className="transactions-section">
+            <TransactionHistory transactions={transactions} />
+          </div>
         </div>
 
-        <div className="transactions-section">
-          <TransactionHistory transactions={transactions} />
+        <div className="entities-section">
+          <h2 className="section-title">Company Entities & Budgets</h2>
+          <EntityList entities={entities} />
         </div>
+          
+        {showTransactionForm && !successMessage && (
+          <TransactionForm
+            entities={entities}
+            onSubmit={handleTransactionSubmit}
+            onCancel={() => setShowTransactionForm(false)}
+          />
+        )}
+        
+        {successMessage && (
+          <div className="transaction-success">
+            <div className="success-content">
+              <div className="success-icon">✅</div>
+              <h3>Transaction Status</h3>
+              <div className="transaction-details">
+                {successMessage.split('\n').map((line, index) => (
+                  <div key={index} className="detail-line">
+                    {line.trim() && <span>{line.trim()}</span>}
+                  </div>
+                ))}
+              </div>
+              <button 
+                className="btn-close-success" 
+                onClick={() => {
+                  console.log('🔄 Closing success message');
+                  setSuccessMessage('');
+                  setShowTransactionForm(false);
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
       </main>
 
       {showVerification && verificationData && (
         <VerificationModal
           verificationData={verificationData}
+          transactionDetails={pendingTransaction}
+          entities={entities}
           onComplete={handleVerificationComplete}
           onCancel={() => {
             console.log('🚫 VERIFICATION CANCELLED');
