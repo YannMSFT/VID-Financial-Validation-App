@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertTriangle, Building, DollarSign, FileText, Tag } from 'lucide-react';
+import { AlertTriangle, Building, DollarSign, FileText, Tag, Send } from 'lucide-react';
 
 const TransactionForm = ({ entities, onSubmit, onCancel }) => {
   const [fromEntity, setFromEntity] = useState('');
@@ -30,7 +30,7 @@ const TransactionForm = ({ entities, onSubmit, onCancel }) => {
       return;
     }
     
-    setErrorMessage(''); // Clear any previous error
+    setErrorMessage('');
     
     const transactionData = {
       fromEntity: fromEntity,
@@ -46,11 +46,14 @@ const TransactionForm = ({ entities, onSubmit, onCancel }) => {
   return (
     <div className="transaction-form-overlay">
       <div className="transaction-form">
-        <h3>💰 New Financial Transaction</h3>
+        <h3>
+          <span>💰</span>
+          New Financial Transaction
+        </h3>
         
         {errorMessage && (
           <div className="error-message">
-            <AlertTriangle size={16} />
+            <AlertTriangle size={18} />
             <span>{errorMessage}</span>
           </div>
         )}
@@ -60,14 +63,14 @@ const TransactionForm = ({ entities, onSubmit, onCancel }) => {
             <div className="form-group">
               <label>
                 <Building size={16} />
-                From Entity:
+                From Entity
               </label>
               <select 
                 value={fromEntity} 
                 onChange={(e) => setFromEntity(e.target.value)}
                 required
               >
-                <option value="">Select source entity...</option>
+                <option value="">Select source...</option>
                 {entities.map(entity => (
                   <option key={entity.id} value={entity.id}>
                     {entity.name} ({entity.id})
@@ -79,14 +82,14 @@ const TransactionForm = ({ entities, onSubmit, onCancel }) => {
             <div className="form-group">
               <label>
                 <Building size={16} />
-                To Entity:
+                To Entity
               </label>
               <select 
                 value={toEntity} 
                 onChange={(e) => setToEntity(e.target.value)}
                 required
               >
-                <option value="">Select destination entity...</option>
+                <option value="">Select destination...</option>
                 {entities.map(entity => (
                   <option key={entity.id} value={entity.id}>
                     {entity.name} ({entity.id})
@@ -100,7 +103,7 @@ const TransactionForm = ({ entities, onSubmit, onCancel }) => {
             <div className="form-group">
               <label>
                 <DollarSign size={16} />
-                Amount:
+                Amount (USD)
               </label>
               <input
                 type="number"
@@ -108,7 +111,7 @@ const TransactionForm = ({ entities, onSubmit, onCancel }) => {
                 min="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder="Enter transaction amount"
+                placeholder="0.00"
                 required
               />
             </div>
@@ -116,7 +119,7 @@ const TransactionForm = ({ entities, onSubmit, onCancel }) => {
             <div className="form-group">
               <label>
                 <Tag size={16} />
-                Category:
+                Category
               </label>
               <select 
                 value={category} 
@@ -135,12 +138,12 @@ const TransactionForm = ({ entities, onSubmit, onCancel }) => {
           <div className="form-group">
             <label>
               <FileText size={16} />
-              Description:
+              Description
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter transaction description or purpose"
+              placeholder="Enter transaction description or purpose..."
               rows="3"
               required
             />
@@ -148,13 +151,13 @@ const TransactionForm = ({ entities, onSubmit, onCancel }) => {
 
           <div className="transaction-summary">
             <div className="summary-row">
-              <span>Transaction Amount:</span>
+              <span>Transaction Amount</span>
               <span className="total-value">${parseFloat(amount || 0).toLocaleString()}</span>
             </div>
             
             {requiresApproval && (
               <div className="approval-warning">
-                <AlertTriangle size={16} />
+                <AlertTriangle size={18} />
                 <span>CFO approval required for transactions over $50,000</span>
               </div>
             )}
@@ -165,7 +168,8 @@ const TransactionForm = ({ entities, onSubmit, onCancel }) => {
               Cancel
             </button>
             <button type="submit" className="btn-submit">
-              {requiresApproval ? 'Submit for CFO Approval' : 'Process Transaction'}
+              <Send size={16} />
+              {requiresApproval ? 'Submit for Approval' : 'Process Transaction'}
             </button>
           </div>
         </form>

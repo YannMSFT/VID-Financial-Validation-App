@@ -1,10 +1,15 @@
 import React from 'react';
-import { CheckCircle, AlertCircle, Building, DollarSign } from 'lucide-react';
-import './TransactionHistory.css';
+import { CheckCircle, AlertCircle } from 'lucide-react';
 
 const TransactionHistory = ({ transactions }) => {
   const formatDateTime = (timestamp) => {
-    return new Date(timestamp).toLocaleString();
+    return new Date(timestamp).toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const formatCurrency = (amount) => {
@@ -14,18 +19,18 @@ const TransactionHistory = ({ transactions }) => {
   // Get emoji/logo for each entity
   const getEntityLogo = (entityId) => {
     const logos = {
-      'CONTOSO-HQ': '🏢',      // Headquarters - Office building
-      'CONTOSO-SALES': '💰',   // Sales - Money
-      'CONTOSO-ENG': '⚙️',     // Engineering - Gear
-      'CONTOSO-MKT': '📢',     // Marketing - Megaphone
-      'CONTOSO-EU': '🇪🇺',     // European subsidiary - EU flag
-      'CONTOSO-FINANCE': '🏦', // Finance - Bank
-      'CONTOSO-IT': '💻',      // IT - Computer
-      'CONTOSO-HR': '👥',      // HR - People
-      'FABRIKAM-US': '🇺🇸',    // Fabrikam US - US flag
-      'WOODGROVE-BANK': '🏛️'  // Woodgrove Bank - Bank building
+      'CONTOSO-HQ': '🏢',
+      'CONTOSO-SALES': '💰',
+      'CONTOSO-ENG': '⚙️',
+      'CONTOSO-MKT': '📣',
+      'CONTOSO-EU': '🇪🇺',
+      'CONTOSO-FINANCE': '🏦',
+      'CONTOSO-IT': '💻',
+      'CONTOSO-HR': '👥',
+      'FABRIKAM-US': '🇺🇸',
+      'WOODGROVE-BANK': '🏛️'
     };
-    return logos[entityId] || '🏢'; // Default to office building
+    return logos[entityId] || '🏢';
   };
 
   const getCategoryIcon = (category) => {
@@ -41,7 +46,7 @@ const TransactionHistory = ({ transactions }) => {
       case 'payroll':
         return '👥';
       case 'marketing':
-        return '📢';
+        return '📣';
       case 'research':
         return '🔬';
       default:
@@ -65,7 +70,10 @@ const TransactionHistory = ({ transactions }) => {
 
   return (
     <div className="transaction-history">
-      <h2>📊 Transaction History</h2>
+      <h2>
+        <span>📊</span>
+        Transaction History
+      </h2>
       
       {transactions.length === 0 ? (
         <div className="empty-transactions">
@@ -92,12 +100,12 @@ const TransactionHistory = ({ transactions }) => {
                 <div className="transaction-status">
                   {transaction.status === 'approved' ? (
                     <>
-                      <CheckCircle size={16} className="status-icon success" />
+                      <CheckCircle size={14} className="status-icon success" />
                       <span className="status-text approved">CFO Approved</span>
                     </>
                   ) : (
                     <>
-                      <CheckCircle size={16} className="status-icon success" />
+                      <CheckCircle size={14} className="status-icon success" />
                       <span className="status-text completed">Completed</span>
                     </>
                   )}
@@ -133,17 +141,17 @@ const TransactionHistory = ({ transactions }) => {
                 
                 <div className="transaction-meta">
                   <div className="meta-row">
-                    <span>Processed:</span>
+                    <span>Processed</span>
                     <span>{formatDateTime(transaction.timestamp)}</span>
                   </div>
                   <div className="meta-row">
-                    <span>Approved by:</span>
+                    <span>Approved by</span>
                     <span>{transaction.approver}</span>
                   </div>
                   {transaction.validator && (transaction.validator.firstName || transaction.validator.lastName) && (
                     <div className="meta-row">
                       <span className="verified-badge">
-                        ✅ Verified by: {transaction.validator.firstName} {transaction.validator.lastName}
+                        ✅ Verified: {transaction.validator.firstName} {transaction.validator.lastName}
                       </span>
                     </div>
                   )}
@@ -155,7 +163,7 @@ const TransactionHistory = ({ transactions }) => {
                   {transaction.faceCheck && transaction.faceCheck.matchConfidenceScore !== undefined && (
                     <div className="meta-row">
                       <span className="face-check-badge">
-                        📸 Face Check: {transaction.faceCheck.matchConfidenceScore}%
+                        📸 Face Match: {transaction.faceCheck.matchConfidenceScore}%
                       </span>
                     </div>
                   )}

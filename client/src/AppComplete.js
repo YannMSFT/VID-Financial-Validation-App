@@ -353,8 +353,19 @@ function App() {
   return (
     <div className="App">
       <header className="app-header">
-        <h1>🏢 Contoso Finance Portal</h1>
-        <p>Internal financial transaction management system</p>
+        <div className="header-content">
+          <div className="header-left">
+            <span className="logo-icon">🏢</span>
+            <div className="header-text">
+              <h1>Contoso Finance Portal</h1>
+              <p>Internal financial transaction management system</p>
+            </div>
+          </div>
+          <div className="header-badge">
+            <span className="badge-dot"></span>
+            <span>System Active</span>
+          </div>
+        </div>
       </header>
 
       <main className="main-content">

@@ -1,5 +1,4 @@
 import React from 'react';
-import { Building, DollarSign, Percent } from 'lucide-react';
 
 const EntityList = ({ entities }) => {
   const formatCurrency = (amount) => `$${amount.toLocaleString()}`;
@@ -10,13 +9,15 @@ const EntityList = ({ entities }) => {
       case 'Corporate':
         return '🏢';
       case 'Sales':
-        return '📊';
+        return '💰';
       case 'Engineering':
         return '⚙️';
       case 'Marketing':
-        return '📢';
+        return '📣';
       case 'Subsidiary':
-        return '🌍';
+        return '🌐';
+      case 'Finance':
+        return '🏦';
       default:
         return '🏛️';
     }
@@ -30,7 +31,10 @@ const EntityList = ({ entities }) => {
 
   return (
     <div className="entity-list">
-      <h2>🏢 Contoso Company Entities & Budgets</h2>
+      <h2>
+        <span>🏢</span>
+        Company Entities & Budgets
+      </h2>
       <div className="entities-grid">
         {entities.map((entity) => {
           const usedPercent = calculateBudgetUsage(entity.usedBudget, entity.budget);
@@ -49,7 +53,7 @@ const EntityList = ({ entities }) => {
                   </div>
                   <div>
                     <h3>{entity.name}</h3>
-                    <p className="entity-id">{entity.id}</p>
+                    <span className="entity-id">{entity.id}</span>
                     <span className="entity-type">{entity.type}</span>
                   </div>
                 </div>
@@ -62,15 +66,15 @@ const EntityList = ({ entities }) => {
               
               <div className="budget-info">
                 <div className="budget-row">
-                  <span className="budget-label">Total Budget:</span>
+                  <span className="budget-label">Total Budget</span>
                   <span className="budget-value">{formatCurrency(entity.budget)}</span>
                 </div>
                 <div className="budget-row">
-                  <span className="budget-label">Used:</span>
+                  <span className="budget-label">Used</span>
                   <span className="budget-value used">{formatCurrency(entity.usedBudget)}</span>
                 </div>
                 <div className="budget-row">
-                  <span className="budget-label">Remaining:</span>
+                  <span className="budget-label">Remaining</span>
                   <span className={`budget-value remaining ${remainingBudget < entity.budget * 0.2 ? 'low' : ''}`}>
                     {formatCurrency(remainingBudget)}
                   </span>
@@ -83,7 +87,7 @@ const EntityList = ({ entities }) => {
                       style={{ width: `${usedPercent}%` }}
                     ></div>
                   </div>
-                  <span className="progress-text">{usedPercent}% used</span>
+                  <span className="progress-text">{usedPercent}% utilized</span>
                 </div>
               </div>
             </div>
