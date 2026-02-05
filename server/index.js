@@ -9,25 +9,6 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Debug: Log environment variables (remove in production)
-// Force restart - updated PORT
-console.log('Environment variables loaded:');
-console.log('TENANT_ID:', process.env.TENANT_ID ? 'Set' : 'Not set');
-console.log('CLIENT_ID:', process.env.CLIENT_ID ? 'Set' : 'Not set');
-console.log('CLIENT_SECRET:', process.env.CLIENT_SECRET ? 'Set (hidden)' : 'Not set');
-console.log('VERIFIED_ID_ENDPOINT:', process.env.VERIFIED_ID_ENDPOINT || 'Using default');
-console.log('BASE_URL:', process.env.BASE_URL || 'http://localhost:5000 (⚠️  Not publicly accessible!)');
-
-// Warn about localhost callback URL
-if (!process.env.BASE_URL || process.env.BASE_URL.includes('localhost')) {
-  console.log('');
-  console.log('🚨 WARNING: BASE_URL is set to localhost or not set!');
-  console.log('💡 Microsoft Entra Verified ID requires a publicly accessible callback URL.');
-  console.log('💡 Use ngrok or similar service: ngrok http 5000');
-  console.log('💡 Then set BASE_URL=https://your-ngrok-url.ngrok.io in .env file');
-  console.log('');
-}
-
 // Middleware
 app.use(cors());
 // Increase body size limit to handle Verified ID callbacks (credentials can be large)
@@ -41,47 +22,37 @@ const completedTransactions = [];
 
 // Function to get access token for Microsoft Entra Verified ID Request Service API
 async function getAccessToken() {
-  try {
-    const tokenEndpoint = `https://login.microsoftonline.com/${process.env.TENANT_ID || 'common'}/oauth2/v2.0/token`;
-    
-    const params = new URLSearchParams();
-    params.append('client_id', process.env.CLIENT_ID || 'your-client-id');
-    params.append('client_secret', process.env.CLIENT_SECRET || 'your-client-secret');
-    // Use the correct scope for Request Service API
-    const scopes = [
-      '3db474b9-6a0c-4840-96ac-1fceb342124f/.default', // Microsoft Entra Verified ID Request Service
-      'bbb94529-53a3-4be5-a069-7eaf2712b826/.default', // Alternative Request Service scope
-      'https://verifiedid.microsoft.com/.default'
-    ];
-    
-    let lastError;
-    
-    for (const scope of scopes) {
-      try {
-        console.log(`Trying authentication with scope: ${scope}`);
-        params.set('scope', scope);
-        params.set('grant_type', 'client_credentials');
+  const tokenEndpoint = `https://login.microsoftonline.com/${process.env.TENANT_ID || 'common'}/oauth2/v2.0/token`;
+  
+  const params = new URLSearchParams();
+  params.append('client_id', process.env.CLIENT_ID || 'your-client-id');
+  params.append('client_secret', process.env.CLIENT_SECRET || 'your-client-secret');
+  
+  const scopes = [
+    '3db474b9-6a0c-4840-96ac-1fceb342124f/.default',
+    'bbb94529-53a3-4be5-a069-7eaf2712b826/.default',
+    'https://verifiedid.microsoft.com/.default'
+  ];
+  
+  let lastError;
+  
+  for (const scope of scopes) {
+    try {
+      params.set('scope', scope);
+      params.set('grant_type', 'client_credentials');
 
-        const response = await axios.post(tokenEndpoint, params, {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          }
-        });
+      const response = await axios.post(tokenEndpoint, params, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      });
 
-        console.log(`Successfully authenticated with scope: ${scope}`);
-        return response.data.access_token;
-      } catch (error) {
-        console.log(`Authentication failed with scope ${scope}:`, error.response?.data?.error_description || error.message);
-        lastError = error;
-        // Continue to try next scope
-      }
+      return response.data.access_token;
+    } catch (error) {
+      lastError = error;
     }
-    
-    throw lastError;
-  } catch (error) {
-    console.error('All authentication attempts failed:', error.response?.data || error.message);
-    throw error;
   }
+  
+  console.error('All authentication attempts failed:', lastError.response?.data || lastError.message);
+  throw lastError;
 }
 
 // Mock company entities and departments
@@ -178,19 +149,13 @@ app.post('/api/verify', async (req, res) => {
       includeReceipt: true
     };
 
-    // Add callback URL if BASE_URL is defined (including ngrok URLs)
+    // Add callback URL if BASE_URL is defined
     if (process.env.BASE_URL) {
-      const callbackUrl = `${process.env.BASE_URL}/api/verification-callback`;
       verificationRequest.callback = {
-        url: callbackUrl,
+        url: `${process.env.BASE_URL}/api/verification-callback`,
         state: requestId,
-        headers: {
-          'api-key': process.env.API_KEY || 'test-key'
-        }
+        headers: { 'api-key': process.env.API_KEY || 'test-key' }
       };
-      console.log('🌐 Using callback URL:', callbackUrl);
-    } else {
-      console.log('🏠 Local mode: No callback URL - using polling instead');
     }
 
     // Store the request using the state as key (this is what Microsoft Entra uses in callbacks)
@@ -207,10 +172,7 @@ app.post('/api/verify', async (req, res) => {
     let accessToken;
     try {
       accessToken = await getAccessToken();
-      console.log('Successfully obtained access token for Verified ID service');
     } catch (authError) {
-      console.log('Authentication failed, falling back to mock implementation:', authError.response?.data?.error_description || authError.message);
-      
       // Fallback to mock implementation
       const mockQRCodeData = JSON.stringify({
         requestId,
@@ -233,9 +195,6 @@ app.post('/api/verify', async (req, res) => {
     
     // Call Microsoft Entra Verified ID Request Service API
     try {
-      console.log('Calling Microsoft Entra Verified ID Request Service API...');
-      console.log('Request payload:', JSON.stringify(verificationRequest, null, 2));
-      
       const apiEndpoint = process.env.VERIFIED_ID_ENDPOINT || 'https://verifiedid.did.msidentity.com/v1.0/verifiableCredentials/createPresentationRequest';
       
       const verifiedIdResponse = await axios.post(
@@ -250,21 +209,7 @@ app.post('/api/verify', async (req, res) => {
         }
       );
 
-      console.log('Successfully created Verified ID presentation request');
-      console.log('Response:', JSON.stringify(verifiedIdResponse.data, null, 2));
-      
       const { requestId: vidRequestId, url, expiry, qrCode } = verifiedIdResponse.data;
-
-      // Log diagnostic information
-      console.log('\n========================================');
-      console.log('✅ VERIFIED ID SERVICE RESPONSE');
-      console.log('========================================');
-      console.log('Request ID:', vidRequestId || requestId);
-      console.log('Presentation URL:', url);
-      console.log('QR Code provided by service:', qrCode ? 'YES' : 'NO (generating from URL)');
-      console.log('URL starts with:', url?.substring(0, 50) + '...');
-      console.log('Expiry:', expiry);
-      console.log('========================================\n');
 
       // Update stored request with Verified ID response
       verificationRequests.set(requestId, {
@@ -286,22 +231,7 @@ app.post('/api/verify', async (req, res) => {
       });
       
     } catch (apiError) {
-      console.error('Verified ID API call failed:', apiError.response?.status, apiError.response?.statusText);
-      console.error('Error details:', JSON.stringify(apiError.response?.data, null, 2));
-      
-      console.log('\n========================================');
-      console.log('⚠️  FALLING BACK TO MOCK MODE');
-      console.log('========================================');
-      console.log('Reason: Entra Verified ID API not accessible');
-      console.log('Error:', apiError.response?.data?.error?.message || apiError.message);
-      console.log('========================================\n');
-      
-      // Check if it's a callback URL issue
-      if (apiError.response?.data?.error?.innererror?.target === 'callback.url') {
-        console.log('🚨 Callback URL must be publicly accessible. Using ngrok or similar service is required for local development.');
-        console.log('💡 Current callback URL:', process.env.BASE_URL || 'http://localhost:5000');
-        console.log('💡 Consider setting BASE_URL environment variable to your ngrok URL');
-      }
+      console.error('Verified ID API call failed:', apiError.response?.data?.error?.message || apiError.message);
       
       // Fallback to mock implementation if API fails
       const mockQRCodeData = JSON.stringify({
@@ -413,16 +343,11 @@ app.get('/api/verify/:requestId/status', (req, res) => {
 // Webhook callback for verification results from Microsoft Entra Verified ID
 app.post('/api/verification-callback', (req, res) => {
   try {
-    console.log('Received verification callback:', JSON.stringify(req.body, null, 2));
-    
     const { requestId, requestStatus, code, state, error, receipt, verifiedCredentialsData } = req.body;
     
-    // The state is the key we use to store verification requests, not requestId
     const request = verificationRequests.get(state);
     
     if (!request) {
-      console.error(`Request not found for state: ${state}`);
-      console.error('Available verification requests:', Array.from(verificationRequests.keys()));
       return res.status(404).json({ error: 'Request not found' });
     }
     
@@ -434,7 +359,6 @@ app.post('/api/verification-callback', (req, res) => {
       case 'request_retrieved':
         request.status = 'request_retrieved';
         request.lastActivity = new Date().toISOString();
-        console.log(`QR code scanned for request: ${state}`);
         break;
         
       case 'presentation_verified':
@@ -449,7 +373,6 @@ app.post('/api/verification-callback', (req, res) => {
               matchConfidenceScore: receipt.faceCheck.matchConfidenceScore,
               sourcePhotoQuality: receipt.faceCheck.sourcePhotoQuality
             };
-            console.log(`Face Check results for request ${state}:`, request.faceCheck);
           }
         }
         
@@ -463,15 +386,13 @@ app.post('/api/verification-callback', (req, res) => {
             type: credential.type,
             credentialState: credential.credentialState
           };
-          console.log(`Presentation verified for request: ${state}`, request.verifiedClaims);
         } else if (receipt && receipt.vp_token) {
           try {
             // Fallback: Parse VP token for claims
             const vpToken = JSON.parse(Buffer.from(receipt.vp_token.split('.')[1], 'base64').toString());
             request.verifiedClaims = vpToken.vc?.credentialSubject || {};
-            console.log(`Presentation verified via VP token for request: ${state}`, request.verifiedClaims);
           } catch (parseError) {
-            console.error('Error parsing VP token:', parseError);
+            // VP token parsing failed
           }
         }
         break;
@@ -482,15 +403,12 @@ app.post('/api/verification-callback', (req, res) => {
         request.error = error || req.body.error || 'Presentation failed';
         request.lastActivity = new Date().toISOString();
         
-        console.log('Full error object:', JSON.stringify(req.body, null, 2));
-        
         // Extract Face Check results even on failure
         if (receipt && receipt.faceCheck) {
           request.faceCheck = {
             matchConfidenceScore: receipt.faceCheck.matchConfidenceScore,
             sourcePhotoQuality: receipt.faceCheck.sourcePhotoQuality
           };
-          console.log(`Face Check results (failed) for request ${state}:`, request.faceCheck);
         }
         
         // Try to extract Face Check score from error message if not in receipt
@@ -501,15 +419,11 @@ app.post('/api/verification-callback', (req, res) => {
             request.faceCheck = {
               matchConfidenceScore: parseInt(scoreMatch[1])
             };
-            console.log(`Face Check score extracted from error message:`, request.faceCheck);
           }
         }
-        
-        console.error(`Presentation failed for request: ${state}`, request.error);
         break;
         
       default:
-        console.log(`Unknown callback status: ${status} for request: ${state}`);
         request.status = status || 'unknown';
         request.lastActivity = new Date().toISOString();
     }
@@ -562,8 +476,6 @@ app.get('/api/verification-status/:requestId', async (req, res) => {
         };
         request.lastActivity = new Date().toISOString();
         verificationRequests.set(requestId, request);
-        
-        console.log(`🎭 Local simulation: Verified request ${requestId} for demo purposes`);
       }
     }
     
@@ -622,8 +534,6 @@ app.post('/api/simulate-verification/:requestId', (req, res) => {
     request.lastActivity = new Date().toISOString();
     verificationRequests.set(requestId, request);
     
-    console.log(`🎭 Manual simulation: Verified request ${requestId}`);
-    
     res.json({
       success: true,
       message: 'Verification simulated successfully',
@@ -645,35 +555,19 @@ app.post('/api/transactions', (req, res) => {
   try {
     const { fromEntity, toEntity, amount, description, category, verificationId, verifiedClaims, faceCheck } = req.body;
     
-    console.log('📋 TRANSACTION REQUEST RECEIVED:');
-    console.log('  Amount:', amount);
-    console.log('  From:', fromEntity);
-    console.log('  To:', toEntity);
-    console.log('  VerificationId:', verificationId);
-    console.log('  VerifiedClaims:', verifiedClaims);
-    console.log('  FaceCheck:', faceCheck);
-    
     let validatorInfo = null;
     let faceCheckInfo = null;
     
     // Check if verification was completed for high-value transactions
     if (amount > 50000) {
-      console.log('💰 HIGH VALUE TRANSACTION - Checking verification...');
       const verification = verificationRequests.get(verificationId);
-      console.log('🔍 Verification found:', verification);
       
       if (!verification || verification.status !== 'presentation_verified') {
-        console.log('❌ VERIFICATION FAILED:', {
-          verificationExists: !!verification,
-          status: verification?.status,
-          required: 'presentation_verified'
-        });
         return res.status(403).json({ 
           error: 'CFO approval required for transactions over $50,000',
           requiresVerification: true 
         });
       }
-      console.log('✅ VERIFICATION PASSED!');
       
       // Extract validator info from verification or verifiedClaims
       const claims = verification?.verifiedClaims || verifiedClaims;
@@ -683,7 +577,6 @@ app.post('/api/transactions', (req, res) => {
           lastName: claims.lastName,
           fullName: `${claims.firstName || ''} ${claims.lastName || ''}`.trim()
         };
-        console.log('👤 Validator info extracted:', validatorInfo);
       }
       
       // Extract Face Check info if available
@@ -693,17 +586,12 @@ app.post('/api/transactions', (req, res) => {
           matchConfidenceScore: faceCheckData.matchConfidenceScore,
           sourcePhotoQuality: faceCheckData.sourcePhotoQuality
         };
-        console.log('📸 Face Check info extracted:', faceCheckInfo);
       }
     }
 
     // Find entity details from the entities database
     const fromEntityDetails = companyEntities.find(e => e.id === fromEntity);
     const toEntityDetails = companyEntities.find(e => e.id === toEntity);
-    
-    console.log(`🔍 Looking up entities: from=${fromEntity} to=${toEntity}`);
-    console.log(`🔍 Found fromEntity:`, fromEntityDetails);
-    console.log(`🔍 Found toEntity:`, toEntityDetails);
     
     // Create transaction with full entity details
     const transaction = {
@@ -722,8 +610,6 @@ app.post('/api/transactions', (req, res) => {
     };
     
     completedTransactions.push(transaction);
-    
-    console.log(`✅ Transaction processed: ${transaction.amount} from ${fromEntityDetails?.name || fromEntity} to ${toEntityDetails?.name || toEntity}`);
     
     // Clean up verification request
     if (verificationId) {
