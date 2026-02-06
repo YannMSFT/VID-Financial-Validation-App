@@ -58,12 +58,12 @@ A demo financial web application for Contoso Corporation that integrates with Mi
 
 ## Usage Flow
 
-1. **Browse Stocks**: View available stocks with real-time pricing
-2. **Place Order**: Select a stock and create an order
-3. **Automatic Verification**: Orders over $10,000 trigger identity verification
+1. **Browse Entities**: View Contoso company entities and their budget status
+2. **Create Transaction**: Select source and destination entities and enter transaction details
+3. **Automatic Verification**: Transactions over $50,000 trigger CFO identity verification
 4. **QR Code Scan**: Use Microsoft Authenticator to scan the QR code
-5. **Share Credential**: Present your verified credential via the mobile app
-6. **Complete Transaction**: Order is processed after successful verification
+5. **Face Check**: Complete biometric Face Check to verify your identity
+6. **Transaction Approved**: View success confirmation with approver name and Face Check score
 
 ## Project Structure
 
@@ -82,12 +82,13 @@ A demo financial web application for Contoso Corporation that integrates with Mi
 
 ## API Endpoints
 
-- `GET /api/stocks` - Get available stocks
-- `POST /api/verify` - Initiate identity verification
-- `GET /api/verify/:id/status` - Check verification status
-- `POST /api/verification-callback` - Webhook for verification results
-- `POST /api/orders` - Place trading order
-- `GET /api/orders` - Get order history
+- `GET /api/entities` - Get company entities and budget status
+- `POST /api/verify` - Initiate CFO identity verification
+- `GET /api/verification-status/:id` - Check verification status (polling)
+- `POST /api/verification-callback` - Webhook for verification results from Entra Verified ID
+- `POST /api/transactions` - Process financial transaction
+- `GET /api/transactions` - Get transaction history
+- `POST /api/simulate-verification/:id` - Simulate verification (local development only)
 
 ## Verified ID Integration
 
@@ -150,9 +151,9 @@ To test the verification flow:
 
 1. Set up Microsoft Entra Verified ID in your tenant
 2. Issue test credentials to your Microsoft Authenticator app
-3. Place an order over $10,000 to trigger verification
-4. Scan the QR code and present your credential
-5. Verify the order completes successfully
+3. Create a transaction over $50,000 to trigger verification
+4. Scan the QR code and complete Face Check
+5. Verify the transaction completes with approver name and Face Check score displayed
 
 ## Support
 

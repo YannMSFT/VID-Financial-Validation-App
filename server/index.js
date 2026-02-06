@@ -8,8 +8,7 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Debug: Log environment variables (remove in production)
-// Force restart - updated PORT
+// Log environment variables on startup
 console.log('Environment variables loaded:');
 console.log('TENANT_ID:', process.env.TENANT_ID ? 'Set' : 'Not set');
 console.log('CLIENT_ID:', process.env.CLIENT_ID ? 'Set' : 'Not set');
@@ -799,5 +798,5 @@ app.get('/api/transactions', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT} - Fresh start with new ngrok URL!`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });

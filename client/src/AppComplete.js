@@ -22,22 +22,15 @@ function App() {
     fetchTransactions();
   }, []);
 
-  // Auto-hide success message after 30 seconds (was 5 seconds)
+  // Auto-hide success message after 30 seconds
   useEffect(() => {
     if (successMessage) {
-      console.log('🕒 Success message will auto-hide in 30 seconds:', successMessage);
       const timer = setTimeout(() => {
-        console.log('🕒 Auto-hiding success message');
         setSuccessMessage('');
-      }, 30000); // 30 seconds instead of 5
+      }, 30000);
       return () => clearTimeout(timer);
     }
   }, [successMessage]);
-
-  useEffect(() => {
-    fetchEntities();
-    fetchTransactions();
-  }, []);
 
   const fetchEntities = async () => {
     try {
@@ -62,21 +55,12 @@ function App() {
   };
 
   const handleTransactionSubmit = async (transactionData) => {
-    console.log('🔵 SUBMIT: Transaction data received:', transactionData);
-    
     // For high-value transactions (>$50,000), require CFO approval
     if (transactionData.amount > 50000) {
-      console.log('💰 HIGH VALUE: Setting pending transaction');
       setPendingTransaction(transactionData);
-      
-      // ALSO store in localStorage to survive hot reloads
       localStorage.setItem('pendingTransaction', JSON.stringify(transactionData));
-      console.log('💾 Stored pending transaction in localStorage');
-      
-      console.log('💰 HIGH VALUE: Pending transaction set, calling initiateVerification');
       await initiateVerification(transactionData);
     } else {
-      console.log('💚 LOW VALUE: Processing transaction directly');
       await processTransaction(transactionData);
     }
   };
@@ -102,17 +86,10 @@ function App() {
   };
 
   const startPollingForVerification = (requestId) => {
-    console.log('🔄 Starting verification polling for request:', requestId);
-    
     const interval = setInterval(async () => {
       try {
         const response = await axios.get(`/api/verification-status/${requestId}`);
         const { status, verifiedClaims, isLocalMode, faceCheck, error } = response.data;
-        
-        console.log('Polling status:', status);
-        if (faceCheck) {
-          console.log('Face Check data:', faceCheck);
-        }
         
         // Update status message for user
         switch (status) {
@@ -123,19 +100,12 @@ function App() {
             );
             break;
           case 'presentation_verified':
-            console.log('🎯 VERIFICATION COMPLETED - About to process transaction');
-            console.log('Pending transaction (state):', pendingTransaction);
-            console.log('Request ID:', requestId);
-            console.log('✅ Verified claims:', verifiedClaims);
-            
             // Try to get pending transaction from state first, then localStorage
             let transactionToProcess = pendingTransaction;
             if (!transactionToProcess) {
-              console.log('🔍 No pending transaction in state, checking localStorage...');
               const stored = localStorage.getItem('pendingTransaction');
               if (stored) {
                 transactionToProcess = JSON.parse(stored);
-                console.log('💾 Retrieved pending transaction from localStorage:', transactionToProcess);
               }
             }
             
@@ -145,37 +115,17 @@ function App() {
             
             // Process transaction immediately and close modal
             if (transactionToProcess) {
-              console.log('🎯 CALLING processTransaction with data:', transactionToProcess, requestId);
-              
-              // Create a copy to avoid race condition
               const transactionCopy = { ...transactionToProcess };
-              console.log('📋 Transaction copy created:', transactionCopy);
-              
-              // Clean up localStorage
               localStorage.removeItem('pendingTransaction');
-              console.log('🗑️ Cleared pendingTransaction from localStorage');
-              
-              // Close verification modal first
               setShowVerification(false);
-              
-              // Process the transaction with verifiedClaims and faceCheck data
               processTransaction(transactionCopy, requestId, verifiedClaims, faceCheck);
             } else {
-              console.log('❌ NO PENDING TRANSACTION TO PROCESS');
-              console.log('❌ Current state - pendingTransaction:', pendingTransaction);
-              console.log('❌ localStorage - pendingTransaction:', localStorage.getItem('pendingTransaction'));
+              console.error('No pending transaction to process');
               setShowVerification(false);
             }
             break;
           case 'failed':
           case 'expired':
-            console.log('===== Verification failed - DETAILED debugging =====');
-            console.log('faceCheck object:', JSON.stringify(faceCheck, null, 2));
-            console.log('error type:', typeof error);
-            console.log('error value:', error);
-            console.log('error stringified:', JSON.stringify(error, null, 2));
-            console.log('Full response.data:', JSON.stringify(response.data, null, 2));
-            
             // Build a user-friendly error message
             let failureMessage = '❌ Verification Failed';
             
@@ -183,36 +133,27 @@ function App() {
             let scoreFromError = null;
             if (error) {
               const errorMsg = typeof error === 'string' ? error : (error.message || JSON.stringify(error));
-              console.log('Error message for parsing:', errorMsg);
-              console.log('Error message length:', errorMsg.length);
-              
-              // Look for patterns like "confidence score 65" or "score: 65" or just numbers after "score"
               const patterns = [
                 /confidence\s+score[:\s]+(\d+)/i,
                 /score[:\s]+(\d+)/i,
                 /match.*?(\d+)%/i,
                 /(\d+)%.*?confidence/i,
                 /threshold.*?(\d+)/i,
-                /(\d+)\s*%/,  // Any number followed by %
+                /(\d+)\s*%/,
                 /score\s*[=:]\s*(\d+)/i
               ];
               
-              for (let i = 0; i < patterns.length; i++) {
-                const pattern = patterns[i];
+              for (const pattern of patterns) {
                 const match = errorMsg.match(pattern);
-                console.log(`Pattern ${i} (${pattern}): ${match ? 'MATCHED - ' + match[1] : 'no match'}`);
                 if (match) {
                   scoreFromError = parseInt(match[1]);
-                  console.log(`✓ Found score ${scoreFromError} using pattern ${i}: ${pattern}`);
                   break;
                 }
               }
             }
             
-            // Add Face Check score if available (from object or extracted from error)
+            // Add Face Check score if available
             const displayScore = faceCheck?.matchConfidenceScore ?? scoreFromError;
-            console.log('Final display score:', displayScore);
-            console.log('=============================================');
             
             if (displayScore !== null && displayScore !== undefined) {
               failureMessage += `\n\n📸 Face Check Score: ${displayScore}%\n(Required: 70% or higher)`;
@@ -254,12 +195,11 @@ function App() {
     };
   }, [pollingInterval]);
 
-  // Simulate verification for local testing (no ngrok needed!)
+  // Simulate verification for local testing
   const simulateVerification = async () => {
     if (verificationData && verificationData.requestId) {
       try {
         await axios.post(`/api/simulate-verification/${verificationData.requestId}`);
-        console.log('🎭 Manual verification simulation triggered');
       } catch (error) {
         console.error('Error simulating verification:', error);
       }
@@ -267,12 +207,6 @@ function App() {
   };
 
   const processTransaction = async (transactionData, verificationId = null, verifiedClaims = null, faceCheck = null) => {
-    console.log('🚀 PROCESS TRANSACTION CALLED');
-    console.log('Transaction data:', transactionData);
-    console.log('Verification ID:', verificationId);
-    console.log('Verified claims:', verifiedClaims);
-    console.log('Face Check data:', faceCheck);
-    
     try {
       const response = await axios.post('/api/transactions', {
         ...transactionData,
@@ -281,17 +215,9 @@ function App() {
         faceCheck
       });
       
-      console.log('✅ SERVER RESPONSE:', response.data);
-      
       // Show embedded success message with transaction details
       const fromEntity = entities.find(e => e.id === transactionData.fromEntity);
       const toEntity = entities.find(e => e.id === transactionData.toEntity);
-      
-      console.log('🎯 Processing transaction success message');
-      console.log('From entity:', fromEntity);
-      console.log('To entity:', toEntity);
-      console.log('Transaction data:', transactionData);
-      console.log('Verified claims for summary:', verifiedClaims);
       
       // Build structured transaction summary
       const validatorName = verifiedClaims && (verifiedClaims.firstName || verifiedClaims.lastName)
@@ -316,15 +242,10 @@ function App() {
       
       // Refresh data to show the new transaction in history
       await fetchTransactions();
-      await fetchEntities(); // Refresh to update budgets
-      
-      console.log('✅ Transaction processed and data refreshed');
+      await fetchEntities();
     } catch (error) {
-      console.error('❌ ERROR PROCESSING TRANSACTION:', error);
-      console.error('❌ Error response:', error.response);
-      console.error('❌ Error message:', error.message);
+      console.error('Error processing transaction:', error);
       
-      // Force display error message
       setSuccessMessage(`ERROR: ${error.message}\nResponse: ${error.response?.data?.error || 'Unknown error'}`);
       
       if (error.response?.data?.requiresVerification) {
@@ -415,7 +336,6 @@ function App() {
                 <button 
                   className="btn-close-success" 
                   onClick={() => {
-                    console.log('🔄 Closing success message');
                     setSuccessMessage('');
                     setShowTransactionForm(false);
                   }}
@@ -437,17 +357,11 @@ function App() {
           verificationData={verificationData}
           onComplete={handleVerificationComplete}
           onCancel={() => {
-            console.log('🚫 VERIFICATION CANCELLED');
             setShowVerification(false);
             setVerificationData(null);
             setPendingTransaction(null);
             setVerificationStatus('');
-            
-            // Clean up localStorage
             localStorage.removeItem('pendingTransaction');
-            console.log('🗑️ Cleared pendingTransaction from localStorage (cancelled)');
-            
-            // Clean up polling
             if (pollingInterval) {
               clearInterval(pollingInterval);
               setPollingInterval(null);
