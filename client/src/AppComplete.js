@@ -293,31 +293,22 @@ function App() {
       console.log('Transaction data:', transactionData);
       console.log('Verified claims for summary:', verifiedClaims);
       
-      // Build transaction summary with validator info if available
-      let transactionSummary = [
-        "Transaction completed successfully!",
-        "",
-        `Amount: $${transactionData.amount.toLocaleString()}`,
-        `From: ${fromEntity?.name || transactionData.fromEntity}`,
-        `To: ${toEntity?.name || transactionData.toEntity}`,
-        `Category: ${transactionData.category}`,
-        `Description: ${transactionData.description}`
-      ];
+      // Build structured transaction summary
+      const validatorName = verifiedClaims && (verifiedClaims.firstName || verifiedClaims.lastName)
+        ? `${verifiedClaims.firstName || ''} ${verifiedClaims.lastName || ''}`.trim()
+        : null;
       
-      // Add validator info if we have verified claims
-      if (verifiedClaims && (verifiedClaims.firstName || verifiedClaims.lastName)) {
-        const validatorName = `${verifiedClaims.firstName || ''} ${verifiedClaims.lastName || ''}`.trim();
-        transactionSummary.push('', `✅ Approved by: ${validatorName}`);
-        
-        // Add Face Check score if available
-        if (faceCheck && faceCheck.matchConfidenceScore !== undefined) {
-          transactionSummary.push(`📸 Face Check Score: ${faceCheck.matchConfidenceScore}%`);
-        }
-      }
+      const successData = {
+        amount: transactionData.amount,
+        from: fromEntity?.name || transactionData.fromEntity,
+        to: toEntity?.name || transactionData.toEntity,
+        category: transactionData.category,
+        description: transactionData.description,
+        approver: validatorName,
+        faceCheckScore: faceCheck?.matchConfidenceScore
+      };
       
-      const summaryText = transactionSummary.join('\n');
-      setSuccessMessage(summaryText);
-      console.log('✅ Success message set:', summaryText);
+      setSuccessMessage(successData);
       
       // Clean up states AFTER setting success message
       setPendingTransaction(null);
@@ -353,21 +344,30 @@ function App() {
   return (
     <div className="App">
       <header className="app-header">
-        <h1>🏢 Contoso Finance Portal</h1>
-        <p>Internal financial transaction management system</p>
+        <div className="header-left">
+          <h1>🏢 Contoso Finance Portal</h1>
+          <p>Enterprise Transaction Management</p>
+        </div>
+        <div className="action-bar">
+          <button 
+            className="btn-primary" 
+            onClick={handleNewTransaction}
+          >
+            + New Transaction
+          </button>
+        </div>
       </header>
+
+      <div className="warning-banner">
+        <span className="warning-icon">⚠️</span>
+        <span className="warning-text">
+          <strong>RESTRICTED ACCESS:</strong> This is a sensitive application restricted to authorized personnel only. 
+          Unauthorized access or misuse may result in disciplinary action and legal consequences.
+        </span>
+      </div>
 
       <main className="main-content">
         <div className="finance-section">
-          <div className="action-bar">
-            <button 
-              className="btn-primary" 
-              onClick={handleNewTransaction}
-            >
-              + New Transaction
-            </button>
-          </div>
-          
           <EntityList entities={entities} />
           
           {showTransactionForm && !successMessage && (
@@ -382,14 +382,36 @@ function App() {
             <div className="transaction-success">
               <div className="success-content">
                 <div className="success-icon">✅</div>
-                <h3>Transaction Status</h3>
-                <div className="transaction-details">
-                  {successMessage.split('\n').map((line, index) => (
-                    <div key={index} className="detail-line">
-                      {line.trim() && <span>{line.trim()}</span>}
+                <h3>Transaction Approved</h3>
+                
+                <div className="highlight-section">
+                  <div className="highlight-card amount-card">
+                    <span className="highlight-label">Amount</span>
+                    <span className="highlight-value amount-value">${successMessage.amount?.toLocaleString()}</span>
+                  </div>
+                  
+                  {successMessage.approver && (
+                    <div className="highlight-card approver-card">
+                      <span className="highlight-label">Approved By</span>
+                      <span className="highlight-value approver-value">{successMessage.approver}</span>
                     </div>
-                  ))}
+                  )}
+                  
+                  {successMessage.faceCheckScore !== undefined && (
+                    <div className="highlight-card score-card">
+                      <span className="highlight-label">Face Check Score</span>
+                      <span className="highlight-value score-value">{Math.round(successMessage.faceCheckScore)}%</span>
+                    </div>
+                  )}
                 </div>
+                
+                <div className="transaction-details">
+                  <div className="detail-line"><span className="detail-label">From:</span> {successMessage.from}</div>
+                  <div className="detail-line"><span className="detail-label">To:</span> {successMessage.to}</div>
+                  <div className="detail-line"><span className="detail-label">Category:</span> {successMessage.category}</div>
+                  <div className="detail-line"><span className="detail-label">Description:</span> {successMessage.description}</div>
+                </div>
+                
                 <button 
                   className="btn-close-success" 
                   onClick={() => {

@@ -449,14 +449,44 @@ app.post('/api/verification-callback', (req, res) => {
         request.verifiedAt = new Date().toISOString();
         request.lastActivity = new Date().toISOString();
         
-        // Extract Face Check results from receipt if available
+        console.log('📋 Full callback body for presentation_verified:', JSON.stringify(req.body, null, 2));
+        
+        // Extract Face Check results from multiple possible locations
         if (receipt) {
+          console.log('📋 Receipt object:', JSON.stringify(receipt, null, 2));
+          
+          // Try different locations where Face Check data might be
           if (receipt.faceCheck) {
             request.faceCheck = {
               matchConfidenceScore: receipt.faceCheck.matchConfidenceScore,
               sourcePhotoQuality: receipt.faceCheck.sourcePhotoQuality
             };
-            console.log(`Face Check results for request ${state}:`, request.faceCheck);
+          } else if (receipt.matchConfidenceScore !== undefined) {
+            // Face Check score might be at the top level of receipt
+            request.faceCheck = {
+              matchConfidenceScore: receipt.matchConfidenceScore,
+              sourcePhotoQuality: receipt.sourcePhotoQuality
+            };
+          }
+          
+          if (request.faceCheck) {
+            console.log(`✅ Face Check results for request ${state}:`, request.faceCheck);
+          }
+        }
+        
+        // Also check for Face Check at the top level of the callback body
+        if (!request.faceCheck) {
+          if (req.body.faceCheck) {
+            request.faceCheck = {
+              matchConfidenceScore: req.body.faceCheck.matchConfidenceScore,
+              sourcePhotoQuality: req.body.faceCheck.sourcePhotoQuality
+            };
+            console.log(`✅ Face Check from body for request ${state}:`, request.faceCheck);
+          } else if (req.body.matchConfidenceScore !== undefined) {
+            request.faceCheck = {
+              matchConfidenceScore: req.body.matchConfidenceScore
+            };
+            console.log(`✅ Face Check score from body root for request ${state}:`, request.faceCheck);
           }
         }
         
@@ -471,6 +501,15 @@ app.post('/api/verification-callback', (req, res) => {
             credentialState: credential.credentialState
           };
           console.log(`Presentation verified for request: ${state}`, request.verifiedClaims);
+          
+          // Extract Face Check from verifiedCredentialsData (this is where Microsoft Entra puts it!)
+          if (credential.faceCheck) {
+            request.faceCheck = {
+              matchConfidenceScore: credential.faceCheck.matchConfidenceScore,
+              sourcePhotoQuality: credential.faceCheck.sourcePhotoQuality
+            };
+            console.log(`✅ Face Check from verifiedCredentialsData for request ${state}:`, request.faceCheck);
+          }
         } else if (receipt && receipt.vp_token) {
           try {
             // Fallback: Parse VP token for claims
@@ -567,6 +606,10 @@ app.get('/api/verification-status/:requestId', async (req, res) => {
           email: 'alex@contoso.com',
           department: 'Finance'
         };
+        request.faceCheck = {
+          matchConfidenceScore: 92,
+          sourcePhotoQuality: 'HIGH'
+        };
         request.lastActivity = new Date().toISOString();
         verificationRequests.set(requestId, request);
         
@@ -626,6 +669,10 @@ app.post('/api/simulate-verification/:requestId', (req, res) => {
       department: 'Finance',
       employeeId: 'CFO-001'
     };
+    request.faceCheck = {
+      matchConfidenceScore: 94,
+      sourcePhotoQuality: 'HIGH'
+    };
     request.lastActivity = new Date().toISOString();
     verificationRequests.set(requestId, request);
     
@@ -635,7 +682,8 @@ app.post('/api/simulate-verification/:requestId', (req, res) => {
       success: true,
       message: 'Verification simulated successfully',
       requestId,
-      verifiedClaims: request.verifiedClaims
+      verifiedClaims: request.verifiedClaims,
+      faceCheck: request.faceCheck
     });
     
   } catch (error) {

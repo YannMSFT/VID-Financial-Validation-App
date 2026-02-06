@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { QrCode, Smartphone, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { CheckCircle, XCircle, Clock } from 'lucide-react';
 
 const VerificationModal = ({ verificationData, onComplete, onCancel, verificationStatus, onSimulate }) => {
   const [status, setStatus] = useState('pending');
@@ -66,26 +66,35 @@ const VerificationModal = ({ verificationData, onComplete, onCancel, verificatio
             <p>🏠 <strong>Local Mode:</strong> No ngrok required! Polling for status updates.</p>
           </div>
         )}
+
+        <div className="approval-reminder">
+          <div className="reminder-header">
+            <span className="reminder-icon">⚠️</span>
+            <strong>Why is approval required?</strong>
+          </div>
+          <p className="reminder-text">
+            This transaction exceeds <strong>$50,000</strong> and requires CFO verification using Microsoft Entra Verified ID with biometric Face Check.
+          </p>
+          <div className="approval-steps">
+            <div className="approval-step">
+              <span className="step-number">1</span>
+              <span className="step-text">Open <strong>Microsoft Authenticator</strong> on your mobile device</span>
+            </div>
+            <div className="approval-step">
+              <span className="step-number">2</span>
+              <span className="step-text">Scan the QR code below to receive the verification request</span>
+            </div>
+            <div className="approval-step">
+              <span className="step-number">3</span>
+              <span className="step-text">Complete <strong>Face Check</strong> to verify your identity and approve the transaction</span>
+            </div>
+          </div>
+        </div>
         
         <div className="verification-content">
           <div className="qr-section">
             <div className="qr-code-container">
               <img src={verificationData.qrCode} alt="QR Code" className="qr-code" />
-            </div>
-            
-            <div className="instructions">
-              <div className="instruction-item">
-                <Smartphone size={24} />
-                <span>Open Microsoft Authenticator app</span>
-              </div>
-              <div className="instruction-item">
-                <QrCode size={24} />
-                <span>Scan this QR code</span>
-              </div>
-              <div className="instruction-item">
-                <CheckCircle size={24} />
-                <span>Present your CFO credentials</span>
-              </div>
             </div>
             
             {isLocalMode && (
