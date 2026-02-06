@@ -1,0 +1,84 @@
+{
+  "company": {
+    "name": "Contoso",
+    "fullName": "Contoso Corporation",
+    "portalName": "Contoso Finance Portal",
+    "portalDescription": "Enterprise Transaction Management",
+    "logo": "/logos/company-logo.png",
+    "approvalThreshold": 50000,
+    "approvalRole": "CFO",
+    "verificationClientName": "Contoso Finance Portal"
+  },
+  "entities": [
+    {
+      "id": "CONTOSO-HQ",
+      "name": "Contoso Corporation - Headquarters",
+      "type": "Corporate",
+      "icon": "🏢",
+      "logo": "/logos/entity-hq.png",
+      "budget": 5000000,
+      "usedBudget": 2350000,
+      "status": "active"
+    },
+    {
+      "id": "CONTOSO-SALES",
+      "name": "Contoso Sales Division - Americas",
+      "type": "Sales",
+      "icon": "💰",
+      "logo": "/logos/entity-sales.png",
+      "budget": 2500000,
+      "usedBudget": 1850000,
+      "status": "active"
+    },
+    {
+      "id": "CONTOSO-ENG",
+      "name": "Contoso Engineering Department",
+      "type": "Engineering",
+      "icon": "⚙️",
+      "logo": "/logos/entity-eng.png",
+      "budget": 8000000,
+      "usedBudget": 4200000,
+      "status": "active"
+    },
+    {
+      "id": "CONTOSO-MKT",
+      "name": "Contoso Marketing & Communications",
+      "type": "Marketing",
+      "icon": "📢",
+      "logo": "/logos/entity-mkt.png",
+      "budget": 1500000,
+      "usedBudget": 890000,
+      "status": "active"
+    },
+    {
+      "id": "CONTOSO-EU",
+      "name": "Contoso European Subsidiary",
+      "type": "Subsidiary",
+      "icon": "🌍",
+      "logo": "/logos/entity-eu.png",
+      "budget": 3200000,
+      "usedBudget": 1650000,
+      "status": "active"
+    },
+    {
+      "id": "FABRIKAM-US",
+      "name": "Fabrikam Inc. - US Operations",
+      "type": "Subsidiary",
+      "icon": "🇺🇸",
+      "logo": "/logos/entity-fabrikam.png",
+      "budget": 4500000,
+      "usedBudget": 2100000,
+      "status": "active"
+    },
+    {
+      "id": "WOODGROVE-BANK",
+      "name": "Woodgrove Financial Services",
+      "type": "Financial",
+      "icon": "🏛️",
+      "logo": "/logos/entity-woodgrove.png",
+      "budget": 6800000,
+      "usedBudget": 3250000,
+      "status": "active"
+    }
+  ]
+}

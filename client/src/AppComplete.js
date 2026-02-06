@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useDemoConfig } from './DemoConfigContext';
 import EntityList from './components/EntityList';
 import TransactionForm from './components/TransactionForm';
 import VerificationModal from './components/VerificationModal';
@@ -7,6 +8,7 @@ import TransactionHistory from './components/TransactionHistory';
 import './App.css';
 
 function App() {
+  const { config } = useDemoConfig();
   const [entities, setEntities] = useState([]);
   const [showTransactionForm, setShowTransactionForm] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
@@ -55,8 +57,8 @@ function App() {
   };
 
   const handleTransactionSubmit = async (transactionData) => {
-    // For high-value transactions (>$50,000), require CFO approval
-    if (transactionData.amount > 50000) {
+    // For high-value transactions, require approval
+    if (transactionData.amount > config.company.approvalThreshold) {
       setPendingTransaction(transactionData);
       localStorage.setItem('pendingTransaction', JSON.stringify(transactionData));
       await initiateVerification(transactionData);
@@ -266,8 +268,13 @@ function App() {
     <div className="App">
       <header className="app-header">
         <div className="header-left">
-          <h1>🏢 Contoso Finance Portal</h1>
-          <p>Enterprise Transaction Management</p>
+          {config.company.logo && (
+            <img src={config.company.logo} alt={config.company.name} className="company-logo" />
+          )}
+          <div>
+            <h1>{config.company.portalName}</h1>
+            <p>{config.company.portalDescription}</p>
+          </div>
         </div>
         <div className="action-bar">
           <button 

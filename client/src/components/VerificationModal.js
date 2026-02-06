@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Clock } from 'lucide-react';
+import { useDemoConfig } from '../DemoConfigContext';
 
 const VerificationModal = ({ verificationData, onComplete, onCancel, verificationStatus, onSimulate }) => {
+  const { config } = useDemoConfig();
   const [status, setStatus] = useState('pending');
 
   // Update status based on parent component polling
@@ -59,7 +61,7 @@ const VerificationModal = ({ verificationData, onComplete, onCancel, verificatio
   return (
     <div className="verification-modal-overlay">
       <div className="verification-modal">
-        <h3>🔐 CFO Approval Required</h3>
+        <h3>🔐 {config.company.approvalRole} Approval Required</h3>
         
         {isLocalMode && (
           <div className="local-mode-banner">
@@ -73,7 +75,7 @@ const VerificationModal = ({ verificationData, onComplete, onCancel, verificatio
             <strong>Why is approval required?</strong>
           </div>
           <p className="reminder-text">
-            This transaction exceeds <strong>$50,000</strong> and requires CFO verification using Microsoft Entra Verified ID with biometric Face Check.
+            This transaction exceeds <strong>${config.company.approvalThreshold?.toLocaleString()}</strong> and requires {config.company.approvalRole} verification using Microsoft Entra Verified ID with biometric Face Check.
           </p>
           <div className="approval-steps">
             <div className="approval-step">

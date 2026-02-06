@@ -3,7 +3,14 @@ const cors = require('cors');
 const axios = require('axios');
 const QRCode = require('qrcode');
 const { v4: uuidv4 } = require('uuid');
+const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
+
+// Load demo configuration (company name, entities, logos)
+const demoConfigPath = path.join(__dirname, 'demo-config.json');
+const demoConfig = JSON.parse(fs.readFileSync(demoConfigPath, 'utf-8'));
+console.log(`📋 Demo config loaded: ${demoConfig.company.fullName} with ${demoConfig.entities.length} entities`);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -82,71 +89,19 @@ async function getAccessToken() {
   }
 }
 
-// Mock company entities and departments
-const companyEntities = [
-  { 
-    id: 'CONTOSO-HQ', 
-    name: 'Contoso Corporation - Headquarters', 
-    type: 'Corporate',
-    budget: 5000000,
-    usedBudget: 2350000,
-    status: 'active'
-  },
-  { 
-    id: 'CONTOSO-SALES', 
-    name: 'Contoso Sales Division - Americas', 
-    type: 'Sales',
-    budget: 2500000,
-    usedBudget: 1850000,
-    status: 'active'
-  },
-  { 
-    id: 'CONTOSO-ENG', 
-    name: 'Contoso Engineering Department', 
-    type: 'Engineering',
-    budget: 8000000,
-    usedBudget: 4200000,
-    status: 'active'
-  },
-  { 
-    id: 'CONTOSO-MKT', 
-    name: 'Contoso Marketing & Communications', 
-    type: 'Marketing',
-    budget: 1500000,
-    usedBudget: 890000,
-    status: 'active'
-  },
-  { 
-    id: 'CONTOSO-EU', 
-    name: 'Contoso European Subsidiary', 
-    type: 'Subsidiary',
-    budget: 3200000,
-    usedBudget: 1650000,
-    status: 'active'
-  },
-  { 
-    id: 'FABRIKAM-US', 
-    name: 'Fabrikam Inc. - US Operations', 
-    type: 'Subsidiary',
-    budget: 4500000,
-    usedBudget: 2100000,
-    status: 'active'
-  },
-  { 
-    id: 'WOODGROVE-BANK', 
-    name: 'Woodgrove Financial Services', 
-    type: 'Financial',
-    budget: 6800000,
-    usedBudget: 3250000,
-    status: 'active'
-  }
-];
+// Company entities loaded from demo-config.json
+const companyEntities = demoConfig.entities.map(({ icon, logo, ...entity }) => entity);
 
 // Routes
 
 // Get company entities
 app.get('/api/entities', (req, res) => {
   res.json(companyEntities);
+});
+
+// Serve demo config to the frontend (company branding + entity icons/logos)
+app.get('/api/config', (req, res) => {
+  res.json(demoConfig);
 });
 
 // Initiate verification request (with polling support for local development)
@@ -163,8 +118,8 @@ app.post('/api/verify', async (req, res) => {
       includeQRCode: true,
       authority: process.env.VERIFIER_AUTHORITY || 'did:web:verifiedid.contoso.com',
       registration: {
-        clientName: 'Contoso Finance Portal',
-        purpose: `Verify CFO credentials to approve transaction: $${transactionDetails.amount.toLocaleString()} from ${transactionDetails.fromEntity} to ${transactionDetails.toEntity}`
+        clientName: demoConfig.company.verificationClientName || demoConfig.company.portalName,
+        purpose: `Verify ${demoConfig.company.approvalRole} credentials to approve transaction: $${transactionDetails.amount.toLocaleString()} from ${transactionDetails.fromEntity} to ${transactionDetails.toEntity}`
       },
       requestedCredentials: [
         {
@@ -221,13 +176,7 @@ app.post('/api/verify', async (req, res) => {
       const mockQRCodeData = JSON.stringify({
         requestId,
         authority: process.env.VERIFIER_AUTHORITY || 'did:web:verifiedid.contoso.com',
-        purpose: `CFO approval required for transaction: $${transactionDetails.amount.toLocaleString()}`,
-        mock: true
-      });
-
-      const qrCodeUrl = await QRCode.toDataURL(mockQRCodeData);
-
-      return res.json({
+        purpose: `${demoConfig.company.approvalRole} approval required for transaction: $${transactionDetails.amount.toLocaleString()}`,
         requestId,
         qrCode: qrCodeUrl,
         url: `ms-authenticator://presentation?request=${encodeURIComponent(mockQRCodeData)}`,
@@ -313,7 +262,7 @@ app.post('/api/verify', async (req, res) => {
       const mockQRCodeData = JSON.stringify({
         requestId,
         authority: process.env.VERIFIER_AUTHORITY || 'did:web:verifiedid.contoso.com',
-        purpose: `CFO approval required for transaction: $${transactionDetails.amount.toLocaleString()}`,
+        purpose: `${demoConfig.company.approvalRole} approval required for transaction: $${transactionDetails.amount.toLocaleString()}`,
         mock: true,
         reason: apiError.response?.data?.error?.innererror?.message || 'API call failed'
       });
@@ -363,7 +312,7 @@ app.get('/api/presentation-request/:requestId', (req, res) => {
       input_descriptors: [
         {
           id: 'VerifiedCredentialExpert',
-          purpose: 'CFO identity verification required for financial transaction approval',
+          purpose: `${demoConfig.company.approvalRole} identity verification required for financial transaction approval`,
           constraints: {
             fields: [
               {
@@ -711,23 +660,16 @@ app.post('/api/transactions', (req, res) => {
     let faceCheckInfo = null;
     
     // Check if verification was completed for high-value transactions
-    if (amount > 50000) {
+    if (amount > demoConfig.company.approvalThreshold) {
       console.log('💰 HIGH VALUE TRANSACTION - Checking verification...');
       const verification = verificationRequests.get(verificationId);
-      console.log('🔍 Verification found:', verification);
       
       if (!verification || verification.status !== 'presentation_verified') {
-        console.log('❌ VERIFICATION FAILED:', {
-          verificationExists: !!verification,
-          status: verification?.status,
-          required: 'presentation_verified'
-        });
         return res.status(403).json({ 
-          error: 'CFO approval required for transactions over $50,000',
+          error: `${demoConfig.company.approvalRole} approval required for transactions over $${demoConfig.company.approvalThreshold.toLocaleString()}`,
           requiresVerification: true 
         });
       }
-      console.log('✅ VERIFICATION PASSED!');
       
       // Extract validator info from verification or verifiedClaims
       const claims = verification?.verifiedClaims || verifiedClaims;
@@ -737,7 +679,6 @@ app.post('/api/transactions', (req, res) => {
           lastName: claims.lastName,
           fullName: `${claims.firstName || ''} ${claims.lastName || ''}`.trim()
         };
-        console.log('👤 Validator info extracted:', validatorInfo);
       }
       
       // Extract Face Check info if available
@@ -747,17 +688,12 @@ app.post('/api/transactions', (req, res) => {
           matchConfidenceScore: faceCheckData.matchConfidenceScore,
           sourcePhotoQuality: faceCheckData.sourcePhotoQuality
         };
-        console.log('📸 Face Check info extracted:', faceCheckInfo);
       }
     }
 
     // Find entity details from the entities database
     const fromEntityDetails = companyEntities.find(e => e.id === fromEntity);
     const toEntityDetails = companyEntities.find(e => e.id === toEntity);
-    
-    console.log(`🔍 Looking up entities: from=${fromEntity} to=${toEntity}`);
-    console.log(`🔍 Found fromEntity:`, fromEntityDetails);
-    console.log(`🔍 Found toEntity:`, toEntityDetails);
     
     // Create transaction with full entity details
     const transaction = {
@@ -767,10 +703,10 @@ app.post('/api/transactions', (req, res) => {
       amount,
       description,
       category,
-      status: amount > 50000 ? 'approved' : 'completed',
+      status: amount > demoConfig.company.approvalThreshold ? 'approved' : 'completed',
       timestamp: new Date().toISOString(),
       verificationId,
-      approver: validatorInfo ? validatorInfo.fullName : (verificationId ? 'Contoso CFO Team' : 'System Auto-Approved'),
+      approver: validatorInfo ? validatorInfo.fullName : (verificationId ? `${demoConfig.company.name} ${demoConfig.company.approvalRole} Team` : 'System Auto-Approved'),
       validator: validatorInfo, // Store full validator info for detailed display
       faceCheck: faceCheckInfo // Store Face Check results if available
     };

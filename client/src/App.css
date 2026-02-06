@@ -129,7 +129,14 @@ body {
 
 .header-left {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.company-logo {
+  height: 48px;
+  width: auto;
+  object-fit: contain;
 }
 
 .app-header h1 {

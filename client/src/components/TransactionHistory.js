@@ -1,8 +1,11 @@
 import React from 'react';
 import { CheckCircle, AlertCircle, Building, DollarSign } from 'lucide-react';
+import { useDemoConfig } from '../DemoConfigContext';
 import './TransactionHistory.css';
 
 const TransactionHistory = ({ transactions }) => {
+  const { config } = useDemoConfig();
+
   const formatDateTime = (timestamp) => {
     return new Date(timestamp).toLocaleString();
   };
@@ -11,21 +14,10 @@ const TransactionHistory = ({ transactions }) => {
     return `$${amount.toLocaleString()}`;
   };
 
-  // Get emoji/logo for each entity
+  // Get emoji/logo for each entity from the demo config
   const getEntityLogo = (entityId) => {
-    const logos = {
-      'CONTOSO-HQ': '🏢',      // Headquarters - Office building
-      'CONTOSO-SALES': '💰',   // Sales - Money
-      'CONTOSO-ENG': '⚙️',     // Engineering - Gear
-      'CONTOSO-MKT': '📢',     // Marketing - Megaphone
-      'CONTOSO-EU': '🇪🇺',     // European subsidiary - EU flag
-      'CONTOSO-FINANCE': '🏦', // Finance - Bank
-      'CONTOSO-IT': '💻',      // IT - Computer
-      'CONTOSO-HR': '👥',      // HR - People
-      'FABRIKAM-US': '🇺🇸',    // Fabrikam US - US flag
-      'WOODGROVE-BANK': '🏛️'  // Woodgrove Bank - Bank building
-    };
-    return logos[entityId] || '🏢'; // Default to office building
+    const entity = config.entities.find(e => e.id === entityId);
+    return entity?.icon || '🏢';
   };
 
   const getCategoryIcon = (category) => {

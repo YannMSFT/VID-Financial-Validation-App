@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { AlertTriangle, Building, DollarSign, FileText, Tag } from 'lucide-react';
+import { useDemoConfig } from '../DemoConfigContext';
 
 const TransactionForm = ({ entities, onSubmit, onCancel }) => {
+  const { config } = useDemoConfig();
   const [fromEntity, setFromEntity] = useState('');
   const [toEntity, setToEntity] = useState('');
   const [amount, setAmount] = useState('');
@@ -9,7 +11,7 @@ const TransactionForm = ({ entities, onSubmit, onCancel }) => {
   const [category, setCategory] = useState('operational');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const requiresApproval = parseFloat(amount) > 50000;
+  const requiresApproval = parseFloat(amount) > config.company.approvalThreshold;
 
   const transactionCategories = [
     { value: 'operational', label: 'Operational Expense' },
@@ -155,7 +157,7 @@ const TransactionForm = ({ entities, onSubmit, onCancel }) => {
             {requiresApproval && (
               <div className="approval-warning">
                 <AlertTriangle size={16} />
-                <span>CFO approval required for transactions over $50,000</span>
+                <span>{config.company.approvalRole} approval required for transactions over ${config.company.approvalThreshold?.toLocaleString()}</span>
               </div>
             )}
           </div>
@@ -165,7 +167,7 @@ const TransactionForm = ({ entities, onSubmit, onCancel }) => {
               Cancel
             </button>
             <button type="submit" className="btn-submit">
-              {requiresApproval ? 'Submit for CFO Approval' : 'Process Transaction'}
+              {requiresApproval ? `Submit for ${config.company.approvalRole} Approval` : 'Process Transaction'}
             </button>
           </div>
         </form>

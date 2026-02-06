@@ -1,24 +1,23 @@
 import React from 'react';
 import { Building, DollarSign, Percent } from 'lucide-react';
+import { useDemoConfig } from '../DemoConfigContext';
 
 const EntityList = ({ entities }) => {
+  const { config } = useDemoConfig();
   const formatCurrency = (amount) => `$${amount.toLocaleString()}`;
   const calculateBudgetUsage = (used, total) => ((used / total) * 100).toFixed(1);
 
-  const getEntityIcon = (type) => {
-    switch (type) {
-      case 'Corporate':
-        return '🏢';
-      case 'Sales':
-        return '📊';
-      case 'Engineering':
-        return '⚙️';
-      case 'Marketing':
-        return '📢';
-      case 'Subsidiary':
-        return '🌍';
-      default:
-        return '🏛️';
+  // Get entity icon from demo config, fallback to type-based icon
+  const getEntityIcon = (entity) => {
+    const configEntity = config.entities.find(e => e.id === entity.id);
+    if (configEntity?.icon) return configEntity.icon;
+    switch (entity.type) {
+      case 'Corporate': return '🏢';
+      case 'Sales': return '📊';
+      case 'Engineering': return '⚙️';
+      case 'Marketing': return '📢';
+      case 'Subsidiary': return '🌍';
+      default: return '🏛️';
     }
   };
 
@@ -30,7 +29,7 @@ const EntityList = ({ entities }) => {
 
   return (
     <div className="entity-list">
-      <h2>🏢 Contoso Company Entities & Budgets</h2>
+      <h2>🏢 {config.company.name} Entities & Budgets</h2>
       <div className="entities-grid">
         {entities.map((entity) => {
           const usedPercent = calculateBudgetUsage(entity.usedBudget, entity.budget);
@@ -45,7 +44,7 @@ const EntityList = ({ entities }) => {
               <div className="entity-header">
                 <div className="entity-info">
                   <div className="entity-icon">
-                    {getEntityIcon(entity.type)}
+                    {getEntityIcon(entity)}
                   </div>
                   <div>
                     <h3>{entity.name}</h3>
